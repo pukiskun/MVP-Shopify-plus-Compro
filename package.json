@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "better-sqlite3": "^11.1.2",
+    "connect-pg-simple": "^10.0.0",
     "dotenv": "^16.4.5",
     "ejs": "^3.1.10",
     "express": "^4.19.2",
@@ -19,6 +20,7 @@
     "multer": "^2.2.0",
     "nodemailer": "^9.0.3",
     "pdfkit": "^0.19.1",
+    "pg": "^8.22.0",
     "xss": "^1.0.15"
   }
 }

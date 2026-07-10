@@ -1,11 +1,8 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const xss = require('xss');
-const Database = require('better-sqlite3');
-const path = require('path');
 
 const router = express.Router();
-const dbPath = path.join(__dirname, '../../database.db');
 
 // Helper to count cart items
 const getCartCount = (req) => {
@@ -96,7 +93,5 @@ router.post('/contact', [
     cartCount
   });
 });
-
-
 
 module.exports = router;

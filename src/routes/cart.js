@@ -1,10 +1,8 @@
 const express = require('express');
-const Database = require('better-sqlite3');
-const path = require('path');
+const db = require('../config/db');
 const { body, validationResult } = require('express-validator');
 
 const router = express.Router();
-const dbPath = path.join(__dirname, '../../database.db');
 
 // Helper to count cart items
 const getCartCount = (req) => {
@@ -42,7 +40,7 @@ router.post('/cart/add', [
   // Validate input fields to prevent spoofing or injection
   body('productId').trim().isInt({ min: 1 }).withMessage('Invalid Product ID.'),
   body('quantity').trim().isInt({ min: 1, max: 10 }).withMessage('Quantity must be an integer between 1 and 10.')
-], (req, res) => {
+], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     const errorMsg = errors.array()[0].msg;
@@ -55,12 +53,10 @@ router.post('/cart/add', [
   const productId = parseInt(req.body.productId, 10);
   const quantity = parseInt(req.body.quantity, 10);
 
-  let db;
   try {
-    db = new Database(dbPath);
-    
     // Security Action: Fetch product details, price, and stock directly from DB.
-    const product = db.prepare('SELECT id, item_name, price, weight, image_url, stock FROM products WHERE id = ?').get(productId);
+    const productResult = await db.query('SELECT id, item_name, price, weight, image_url, stock FROM products WHERE id = $1', [productId]);
+    const product = productResult.rows[0];
     
     if (!product) {
       if (req.xhr || (req.headers.accept && req.headers.accept.includes('json'))) {
@@ -102,8 +98,8 @@ router.post('/cart/add', [
       req.session.cart.push({
         id: product.id,
         item_name: product.item_name,
-        price: product.price,       // Resolved from database
-        weight: product.weight,     // Resolved from database
+        price: parseInt(product.price, 10), // Resolve from database, parse bigint safely
+        weight: product.weight,     // Resolve from database
         image_url: product.image_url,
         quantity: quantity
       });
@@ -119,8 +115,6 @@ router.post('/cart/add', [
       return res.status(500).json({ error: 'Error adding item to cart.' });
     }
     res.status(500).send('Error adding item to cart.');
-  } finally {
-    if (db) db.close();
   }
 });
 
@@ -135,7 +129,7 @@ router.post('/cart/add-by-sku', [
     .optional()
     .trim()
     .isInt({ min: 1, max: 10 }).withMessage('Quantity must be between 1 and 10.')
-], (req, res) => {
+], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     const errorMsg = errors.array()[0].msg;
@@ -148,12 +142,10 @@ router.post('/cart/add-by-sku', [
   const sku = req.body.sku;
   const quantity = parseInt(req.body.quantity || '1', 10);
 
-  let db;
   try {
-    db = new Database(dbPath);
-    
     // Find the product by SKU, making sure it is not hidden
-    const product = db.prepare('SELECT id, item_name, price, weight, image_url, stock, is_hidden FROM products WHERE sku = ?').get(sku);
+    const productResult = await db.query('SELECT id, item_name, price, weight, image_url, stock, is_hidden FROM products WHERE sku = $1', [sku]);
+    const product = productResult.rows[0];
     
     if (!product || product.is_hidden === 1) {
       const errorMsg = 'Product with specified SKU not found.';
@@ -196,7 +188,7 @@ router.post('/cart/add-by-sku', [
       req.session.cart.push({
         id: product.id,
         item_name: product.item_name,
-        price: product.price,
+        price: parseInt(product.price, 10),
         weight: product.weight,
         image_url: product.image_url,
         quantity: quantity
@@ -227,8 +219,6 @@ router.post('/cart/add-by-sku', [
       return res.status(500).json({ error: errorMsg });
     }
     res.redirect(`/cart?error=${encodeURIComponent(errorMsg)}`);
-  } finally {
-    if (db) db.close();
   }
 });
 
@@ -236,7 +226,7 @@ router.post('/cart/add-by-sku', [
 router.post('/cart/update', [
   body('productId').trim().isInt({ min: 1 }).withMessage('Invalid Product ID.'),
   body('action').trim().isIn(['increment', 'decrement']).withMessage('Invalid update action.')
-], (req, res) => {
+], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     const errorMsg = errors.array()[0].msg;
@@ -261,10 +251,9 @@ router.post('/cart/update', [
     let currentQty = req.session.cart[itemIndex].quantity;
 
     if (action === 'increment') {
-      let db;
       try {
-        db = new Database(dbPath);
-        const product = db.prepare('SELECT stock FROM products WHERE id = ?').get(productId);
+        const productResult = await db.query('SELECT stock FROM products WHERE id = $1', [productId]);
+        const product = productResult.rows[0];
         
         // Security check: Verify increment action against database stock count
         if (product && currentQty + 1 > product.stock) {
@@ -276,8 +265,6 @@ router.post('/cart/update', [
         }
       } catch (err) {
         console.error('[Error] Stock check failed on update:', err);
-      } finally {
-        if (db) db.close();
       }
 
       if (currentQty < 10) {

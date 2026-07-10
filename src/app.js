@@ -30,11 +30,15 @@ app.use(express.static(path.join(__dirname, '../public')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const SQLiteStore = require('./utils/sqliteStore');
+const pgSession = require('connect-pg-simple')(session);
+const db = require('./config/db');
 
 // Secure Session management for shopping cart
 app.use(session({
-  store: new SQLiteStore(),
+  store: new pgSession({
+    pool: db.pool,
+    tableName: 'session'
+  }),
   name: 'shopify_session', // Avoid default 'connect.sid' to make scanning slightly harder
   secret: process.env.SESSION_SECRET || 'dev_fallback_secret_key_98765',
   resave: false,

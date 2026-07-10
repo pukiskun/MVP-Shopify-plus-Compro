@@ -20,7 +20,7 @@ router.get('/ad-minpanel/login', (req, res) => {
 });
 
 // POST: Process login credentials securely
-router.post('/ad-minpanel/login', loginRateLimiter, (req, res) => {
+router.post('/ad-minpanel/login', loginRateLimiter, async (req, res) => {
   const { username, password } = req.body;
   const configuredUser = process.env.ADMIN_USERNAME;
   const configuredPass = process.env.ADMIN_PASSWORD;
@@ -30,7 +30,7 @@ router.post('/ad-minpanel/login', loginRateLimiter, (req, res) => {
     console.error('[Security Error] Admin credentials are unconfigured in env variables.');
     
     // Log configuration error event
-    logAdminAction('system', 'LOGIN_FAILURE', `Login failed: Server admin credentials configuration is missing. IP: ${req.ip}`);
+    await logAdminAction('system', 'LOGIN_FAILURE', `Login failed: Server admin credentials configuration is missing. IP: ${req.ip}`);
 
     return res.render('admin/login', {
       title: 'Admin Login Portal',
@@ -42,7 +42,7 @@ router.post('/ad-minpanel/login', loginRateLimiter, (req, res) => {
   // Hashed, timing-safe comparison of username & password
   if (username === configuredUser && verifyPassword(password, configuredPass)) {
     // Security Action: Regenerate session ID to prevent Session Fixation vulnerabilities
-    req.session.regenerate((err) => {
+    req.session.regenerate(async (err) => {
       if (err) {
         console.error('[Session Error] Failed to regenerate session on login:', err);
         return res.status(500).send('Internal server error.');
@@ -51,7 +51,7 @@ router.post('/ad-minpanel/login', loginRateLimiter, (req, res) => {
       req.session.isAdmin = true;
       
       // Audit Log: Successful login
-      logAdminAction(username, 'LOGIN_SUCCESS', `Administrator logged in successfully. Session initiated. IP: ${req.ip}`);
+      await logAdminAction(username, 'LOGIN_SUCCESS', `Administrator logged in successfully. Session initiated. IP: ${req.ip}`);
 
       res.redirect('/ad-minpanel/products');
     });
@@ -60,7 +60,8 @@ router.post('/ad-minpanel/login', loginRateLimiter, (req, res) => {
     console.warn(`[Security Audit] Failed login attempt for user: "${username}"`);
     
     // Audit Log: Failed login
-    logAdminAction(username || 'unknown', 'LOGIN_FAILURE', `Failed login attempt. IP: ${req.ip}`);
+    await logAdminAction(username || 'unknown', 'LOGIN_FAILURE', `Failed login attempt. IP: ${req.ip}`);
+
 
     res.render('admin/login', {
       title: 'Admin Login Portal',

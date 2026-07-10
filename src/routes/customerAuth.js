@@ -1,12 +1,10 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
-const Database = require('better-sqlite3');
-const path = require('path');
+const db = require('../config/db');
 const crypto = require('crypto');
 const { hashPassword, verifyPassword } = require('../utils/cryptoHelper');
 
 const router = express.Router();
-const dbPath = path.join(__dirname, '../../database.db');
 
 // Helper to count cart items
 const getCartCount = (req) => {
@@ -65,7 +63,7 @@ router.post('/login', [
   verifyCsrfToken,
   body('email').trim().isEmail().withMessage('Please enter a valid email address.').normalizeEmail(),
   body('password').notEmpty().withMessage('Password is required.')
-], (req, res) => {
+], async (req, res) => {
   const errors = validationResult(req);
   const redirect = req.body.redirect || '';
   const formData = { email: req.body.email };
@@ -83,13 +81,11 @@ router.post('/login', [
   }
 
   const { email, password } = req.body;
-  let db;
 
   try {
-    db = new Database(dbPath);
-    
     // Fetch customer securely (parameterized)
-    const customer = db.prepare('SELECT id, email, password_hash, name FROM customers WHERE email = ?').get(email);
+    const result = await db.query('SELECT id, email, password_hash, name FROM customers WHERE email = $1', [email]);
+    const customer = result.rows[0];
     
     // Dummy hash to prevent user enumeration via timing attack (constant scrypt time execution)
     const dummyHash = 'scrypt:84f7b2c5d1e679a8b0c2d3e4f5a6b7c8:84f7b2c5d1e679a8b0c2d3e4f5a6b7c884f7b2c5d1e679a8b0c2d3e4f5a6b7c884f7b2c5d1e679a8b0c2d3e4f5a6b7c884f7b2c5d1e679a8b0c2d3e4f5a6b7c8';
@@ -140,8 +136,6 @@ router.post('/login', [
       redirect,
       cartCount: getCartCount(req)
     });
-  } finally {
-    if (db) db.close();
   }
 });
 
@@ -170,7 +164,7 @@ router.post('/register', [
   body('phone').optional({ checkFalsy: true }).trim().isLength({ min: 10, max: 15 }).withMessage('Phone number must be between 10 and 15 digits.').isNumeric().withMessage('Phone number must contain only digits.'),
   body('shipping_address').optional({ checkFalsy: true }).trim().isLength({ max: 500 }).withMessage('Address must be less than 500 characters.'),
   body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters long.')
-], (req, res) => {
+], async (req, res) => {
   const errors = validationResult(req);
   const redirect = req.body.redirect || '';
   const formData = {
@@ -192,14 +186,11 @@ router.post('/register', [
   }
 
   const { name, email, phone, shipping_address, password } = req.body;
-  let db;
 
   try {
-    db = new Database(dbPath);
-    
     // Check if email already exists
-    const existing = db.prepare('SELECT id FROM customers WHERE email = ?').get(email);
-    if (existing) {
+    const existingResult = await db.query('SELECT id FROM customers WHERE email = $1', [email]);
+    if (existingResult.rows.length > 0) {
       return res.render('register', {
         title: 'Create Account',
         activePage: 'register',
@@ -214,12 +205,13 @@ router.post('/register', [
     const passwordHash = hashPassword(password);
 
     // Insert new customer securely (parameterized)
-    const insertResult = db.prepare(`
+    const insertResult = await db.query(`
       INSERT INTO customers (email, password_hash, name, phone, shipping_address)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(email, passwordHash, name, phone || null, shipping_address || null);
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING id
+    `, [email, passwordHash, name, phone || null, shipping_address || null]);
 
-    const customerId = insertResult.lastInsertRowid;
+    const customerId = insertResult.rows[0].id;
 
     // Preserve cart and myOrders to avoid losing shopping state
     const oldCart = req.session.cart || [];
@@ -251,8 +243,6 @@ router.post('/register', [
       redirect,
       cartCount: getCartCount(req)
     });
-  } finally {
-    if (db) db.close();
   }
 });
 

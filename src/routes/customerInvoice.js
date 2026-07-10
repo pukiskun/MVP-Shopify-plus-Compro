@@ -1,13 +1,11 @@
 const express = require('express');
-const Database = require('better-sqlite3');
-const path = require('path');
+const db = require('../config/db');
 const { generateInvoicePdf } = require('../utils/invoicePdfGenerator');
 
 const router = express.Router();
-const dbPath = path.join(__dirname, '../../database.db');
 
 // GET /orders/invoice/:uuid - Retrieve customer order invoice PDF
-router.get('/orders/invoice/:uuid', (req, res) => {
+router.get('/orders/invoice/:uuid', async (req, res) => {
   const orderUuid = req.params.uuid;
 
   // Validate UUIDv4 format to protect against path traversal and SQL injection
@@ -20,12 +18,10 @@ router.get('/orders/invoice/:uuid', (req, res) => {
     return res.status(401).send('Unauthorized. Please log in to access this invoice.');
   }
 
-  let db;
   try {
-    db = new Database(dbPath);
-    
     // Parameterized lookup prevents SQLi
-    const order = db.prepare('SELECT * FROM orders WHERE order_uuid = ?').get(orderUuid);
+    const orderResult = await db.query('SELECT * FROM orders WHERE order_uuid = $1', [orderUuid]);
+    const order = orderResult.rows[0];
     
     if (!order) {
       return res.status(404).send('Order not found.');
@@ -38,7 +34,8 @@ router.get('/orders/invoice/:uuid', (req, res) => {
     }
 
     // Fetch order line items
-    const items = db.prepare('SELECT * FROM order_items WHERE order_id = ?').all(order.id);
+    const itemsResult = await db.query('SELECT * FROM order_items WHERE order_id = $1', [order.id]);
+    const items = itemsResult.rows;
 
     // Set Response Headers for PDF Streaming
     res.setHeader('Content-Type', 'application/pdf');
@@ -52,8 +49,6 @@ router.get('/orders/invoice/:uuid', (req, res) => {
     if (!res.headersSent) {
       res.status(500).send('Failed to generate invoice PDF document.');
     }
-  } finally {
-    if (db) db.close();
   }
 });
 

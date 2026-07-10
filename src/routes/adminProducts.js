@@ -1,5 +1,5 @@
 const express = require('express');
-const Database = require('better-sqlite3');
+const db = require('../config/db');
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
@@ -9,7 +9,6 @@ const { requireAdmin } = require('../middleware/auth');
 const { logAdminAction } = require('../utils/auditLogger');
 
 const router = express.Router();
-const dbPath = path.join(__dirname, '../../database.db');
 
 // Ensure public/uploads folder is created programmatically
 const uploadDir = path.join(__dirname, '../../public/uploads');
@@ -75,29 +74,31 @@ const handleUpload = (req, res, next) => {
 router.use('/ad-minpanel/products', requireAdmin);
 
 // GET: Admin Dashboard listing all catalog products
-router.get('/ad-minpanel/products', (req, res) => {
-  let db;
+router.get('/ad-minpanel/products', async (req, res) => {
   try {
-    db = new Database(dbPath);
-    
     let query = 'SELECT id, item_name, price, weight, description, image_url, stock, sku, type, is_hidden FROM products WHERE 1=1';
     const params = [];
+    let paramIndex = 1;
     
     if (req.query.search) {
       const searchPattern = `%${req.query.search.trim()}%`;
-      query += ' AND (item_name LIKE ? OR sku LIKE ?)';
+      query += ` AND (item_name ILIKE $${paramIndex} OR sku ILIKE $${paramIndex + 1})`;
       params.push(searchPattern, searchPattern);
+      paramIndex += 2;
     }
     
     if (req.query.type) {
-      query += ' AND type = ?';
+      query += ` AND type = $${paramIndex}`;
       params.push(req.query.type);
+      paramIndex += 1;
     }
     
     query += ' ORDER BY id ASC';
-    const products = db.prepare(query).all(...params);
+    const productsResult = await db.query(query, params);
+    const products = productsResult.rows;
     
-    const types = db.prepare("SELECT DISTINCT type FROM products WHERE type IS NOT NULL AND type != '' ORDER BY type ASC").all().map(t => t.type);
+    const typesResult = await db.query("SELECT DISTINCT type FROM products WHERE type IS NOT NULL AND type != '' ORDER BY type ASC");
+    const types = typesResult.rows.map(t => t.type);
     
     res.render('admin/dashboard', {
       title: 'Admin Products Dashboard',
@@ -109,8 +110,6 @@ router.get('/ad-minpanel/products', (req, res) => {
   } catch (error) {
     console.error('[Error] Admin Dashboard load failed:', error);
     res.status(500).send('Failed to retrieve catalog listings.');
-  } finally {
-    if (db) db.close();
   }
 });
 
@@ -163,7 +162,7 @@ router.post('/ad-minpanel/products/new', handleUpload, [
       }
       return true;
     })
-], (req, res) => {
+], async (req, res) => {
   const errors = validationResult(req);
   const formData = req.body;
 
@@ -194,13 +193,10 @@ router.post('/ad-minpanel/products/new', handleUpload, [
     imageUrl = `/uploads/${req.file.filename}`;
   }
 
-  let db;
   try {
-    db = new Database(dbPath);
-    
     // Check SKU uniqueness
-    const existingSku = db.prepare('SELECT id FROM products WHERE sku = ?').get(sku);
-    if (existingSku) {
+    const existingSkuResult = await db.query('SELECT id FROM products WHERE sku = $1', [sku]);
+    if (existingSkuResult.rows.length > 0) {
       if (req.file) {
         fs.unlink(req.file.path, () => {});
       }
@@ -213,16 +209,17 @@ router.post('/ad-minpanel/products/new', handleUpload, [
     }
 
     // Security Action: Parameterized prepared statement prevents SQL Injection (SQLi)
-    const result = db.prepare(`
+    const result = await db.query(`
       INSERT INTO products (item_name, price, weight, description, image_url, stock, sku, type, is_hidden)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(sanitizedName, price, weight, sanitizedDesc, imageUrl, stock, sku, type, is_hidden);
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING id
+    `, [sanitizedName, price, weight, sanitizedDesc, imageUrl, stock, sku, type, is_hidden]);
 
-    const productId = result.lastInsertRowid;
+    const productId = result.rows[0].id;
     console.log(`[Audit] Product "${sanitizedName}" created by administrator.`);
     
     // Audit Log: Product created
-    logAdminAction(
+    await logAdminAction(
       process.env.ADMIN_USERNAME || 'admin', 
       'PRODUCT_CREATED', 
       `Product created. ID: ${productId}, Name: "${sanitizedName}", SKU: "${sku}", Type: "${type}", Hidden: ${is_hidden}, Price: Rp ${price}, Weight: ${weight}g, Stock: ${stock}`
@@ -240,13 +237,11 @@ router.post('/ad-minpanel/products/new', handleUpload, [
       product: formData,
       errors: ['Database insertion failed. Verify input details.']
     });
-  } finally {
-    if (db) db.close();
   }
 });
 
 // GET: Render form to edit an existing product
-router.get('/ad-minpanel/products/edit/:id', (req, res) => {
+router.get('/ad-minpanel/products/edit/:id', async (req, res) => {
   const productId = req.params.id;
 
   // Validation: Ensure ID contains only integer digits (prevent SQLi / path traversal)
@@ -254,10 +249,9 @@ router.get('/ad-minpanel/products/edit/:id', (req, res) => {
     return res.status(400).send('Invalid Product ID format.');
   }
 
-  let db;
   try {
-    db = new Database(dbPath);
-    const product = db.prepare('SELECT id, item_name, price, weight, description, image_url, stock, sku, type, is_hidden FROM products WHERE id = ?').get(productId);
+    const result = await db.query('SELECT id, item_name, price, weight, description, image_url, stock, sku, type, is_hidden FROM products WHERE id = $1', [productId]);
+    const product = result.rows[0];
     
     if (!product) {
       return res.status(404).send('Product not found.');
@@ -272,8 +266,6 @@ router.get('/ad-minpanel/products/edit/:id', (req, res) => {
   } catch (error) {
     console.error(`[Error] Edit form fetch failed for ID ${productId}:`, error);
     res.status(500).send('Internal server error.');
-  } finally {
-    if (db) db.close();
   }
 });
 
@@ -316,7 +308,7 @@ router.post('/ad-minpanel/products/edit/:id', handleUpload, [
       }
       return true;
     })
-], (req, res) => {
+], async (req, res) => {
   const productId = req.params.id;
 
   if (!/^\d+$/.test(productId)) {
@@ -357,13 +349,10 @@ router.post('/ad-minpanel/products/edit/:id', handleUpload, [
     imageUrl = `/uploads/${req.file.filename}`;
   }
 
-  let db;
   try {
-    db = new Database(dbPath);
-    
     // Check SKU uniqueness
-    const existingSku = db.prepare('SELECT id FROM products WHERE sku = ? AND id != ?').get(sku, productId);
-    if (existingSku) {
+    const existingSkuResult = await db.query('SELECT id FROM products WHERE sku = $1 AND id != $2', [sku, productId]);
+    if (existingSkuResult.rows.length > 0) {
       if (req.file) {
         fs.unlink(req.file.path, () => {});
       }
@@ -376,13 +365,13 @@ router.post('/ad-minpanel/products/edit/:id', handleUpload, [
     }
 
     // Security Action: Parameterized prepared statement prevents SQLi
-    const result = db.prepare(`
+    const result = await db.query(`
       UPDATE products
-      SET item_name = ?, price = ?, weight = ?, description = ?, image_url = ?, stock = ?, sku = ?, type = ?, is_hidden = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `).run(sanitizedName, price, weight, sanitizedDesc, imageUrl, stock, sku, type, is_hidden, productId);
+      SET item_name = $1, price = $2, weight = $3, description = $4, image_url = $5, stock = $6, sku = $7, type = $8, is_hidden = $9, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $10
+    `, [sanitizedName, price, weight, sanitizedDesc, imageUrl, stock, sku, type, is_hidden, productId]);
 
-    if (result.changes === 0) {
+    if (result.rowCount === 0) {
       if (req.file) {
         fs.unlink(req.file.path, () => {});
       }
@@ -392,7 +381,7 @@ router.post('/ad-minpanel/products/edit/:id', handleUpload, [
     console.log(`[Audit] Product ID ${productId} ("${sanitizedName}") updated by administrator.`);
     
     // Audit Log: Product updated
-    logAdminAction(
+    await logAdminAction(
       process.env.ADMIN_USERNAME || 'admin', 
       'PRODUCT_UPDATED', 
       `Product updated. ID: ${productId}, Name: "${sanitizedName}", SKU: "${sku}", Type: "${type}", Hidden: ${is_hidden}, Price: Rp ${price}, Weight: ${weight}g, Stock: ${stock}`
@@ -410,40 +399,34 @@ router.post('/ad-minpanel/products/edit/:id', handleUpload, [
       product: formData,
       errors: ['Database update failed. Verify input details.']
     });
-  } finally {
-    if (db) db.close();
   }
 });
 
 // POST: Delete a product securely (Denies GET access to prevent simple click CSRF triggers)
-router.post('/ad-minpanel/products/delete/:id', (req, res) => {
+router.post('/ad-minpanel/products/delete/:id', async (req, res) => {
   const productId = req.params.id;
 
   if (!/^\d+$/.test(productId)) {
     return res.status(400).send('Invalid Product ID format.');
   }
 
-  let db;
   try {
-    db = new Database(dbPath);
     // Security Action: Parameterized prepared statement prevents SQLi
-    const result = db.prepare('DELETE FROM products WHERE id = ?').run(productId);
+    const result = await db.query('DELETE FROM products WHERE id = $1', [productId]);
 
-    if (result.changes === 0) {
+    if (result.rowCount === 0) {
       return res.status(404).send('Product not found.');
     }
 
     console.log(`[Audit] Product ID ${productId} deleted by administrator.`);
     
     // Audit Log: Product deleted
-    logAdminAction(process.env.ADMIN_USERNAME || 'admin', 'PRODUCT_DELETED', `Product deleted. ID: ${productId}`);
+    await logAdminAction(process.env.ADMIN_USERNAME || 'admin', 'PRODUCT_DELETED', `Product deleted. ID: ${productId}`);
 
     res.redirect('/ad-minpanel/products');
   } catch (error) {
     console.error('[Error] Product deletion failed:', error);
     res.status(500).send('Internal server error.');
-  } finally {
-    if (db) db.close();
   }
 });
 
@@ -452,29 +435,31 @@ router.post('/ad-minpanel/products/delete/:id', (req, res) => {
 // ====================================================
 
 // GET: Dedicated Inventory Control dashboard
-router.get('/ad-minpanel/inventory', requireAdmin, (req, res) => {
-  let db;
+router.get('/ad-minpanel/inventory', requireAdmin, async (req, res) => {
   try {
-    db = new Database(dbPath);
-    
     let query = 'SELECT id, item_name, stock, sku, type FROM products WHERE 1=1';
     const params = [];
+    let paramIndex = 1;
     
     if (req.query.search) {
       const searchPattern = `%${req.query.search.trim()}%`;
-      query += ' AND (item_name LIKE ? OR sku LIKE ?)';
+      query += ` AND (item_name ILIKE $${paramIndex} OR sku ILIKE $${paramIndex + 1})`;
       params.push(searchPattern, searchPattern);
+      paramIndex += 2;
     }
     
     if (req.query.type) {
-      query += ' AND type = ?';
+      query += ` AND type = $${paramIndex}`;
       params.push(req.query.type);
+      paramIndex += 1;
     }
     
     query += ' ORDER BY id ASC';
-    const products = db.prepare(query).all(...params);
+    const productsResult = await db.query(query, params);
+    const products = productsResult.rows;
     
-    const types = db.prepare("SELECT DISTINCT type FROM products WHERE type IS NOT NULL AND type != '' ORDER BY type ASC").all().map(t => t.type);
+    const typesResult = await db.query("SELECT DISTINCT type FROM products WHERE type IS NOT NULL AND type != '' ORDER BY type ASC");
+    const types = typesResult.rows.map(t => t.type);
     
     res.render('admin/inventory', {
       title: 'Inventory Control Manager',
@@ -488,8 +473,6 @@ router.get('/ad-minpanel/inventory', requireAdmin, (req, res) => {
   } catch (error) {
     console.error('[Error] Inventory view failed:', error);
     res.status(500).send('Failed to retrieve inventory list.');
-  } finally {
-    if (db) db.close();
   }
 });
 
@@ -504,33 +487,36 @@ router.post('/ad-minpanel/inventory/update', [
     .trim()
     .notEmpty().withMessage('Stock level is required.')
     .isInt({ min: 0 }).withMessage('Stock level must be a valid non-negative integer.')
-], (req, res) => {
+], async (req, res) => {
   const errors = validationResult(req);
   const formData = req.body;
   const productId = parseInt(formData.productId, 10);
   const stock = parseInt(formData.stock, 10);
 
   if (!errors.isEmpty()) {
-    let db;
     try {
-      db = new Database(dbPath);
       const search = req.query.search || '';
       const selectedType = req.query.type || '';
       
       let query = 'SELECT id, item_name, stock, sku, type FROM products WHERE 1=1';
       const params = [];
+      let paramIndex = 1;
       if (search) {
         const searchPattern = `%${search.trim()}%`;
-        query += ' AND (item_name LIKE ? OR sku LIKE ?)';
+        query += ` AND (item_name ILIKE $${paramIndex} OR sku ILIKE $${paramIndex + 1})`;
         params.push(searchPattern, searchPattern);
+        paramIndex += 2;
       }
       if (selectedType) {
-        query += ' AND type = ?';
+        query += ` AND type = $${paramIndex}`;
         params.push(selectedType);
+        paramIndex += 1;
       }
       query += ' ORDER BY id ASC';
-      const products = db.prepare(query).all(...params);
-      const types = db.prepare("SELECT DISTINCT type FROM products WHERE type IS NOT NULL AND type != '' ORDER BY type ASC").all().map(t => t.type);
+      const productsResult = await db.query(query, params);
+      const products = productsResult.rows;
+      const typesResult = await db.query("SELECT DISTINCT type FROM products WHERE type IS NOT NULL AND type != '' ORDER BY type ASC");
+      const types = typesResult.rows.map(t => t.type);
 
       return res.render('admin/inventory', {
         title: 'Inventory Control Manager',
@@ -543,34 +529,30 @@ router.post('/ad-minpanel/inventory/update', [
       });
     } catch (err) {
       return res.status(500).send('Internal database error.');
-    } finally {
-      if (db) db.close();
     }
   }
 
-  let db;
   try {
-    db = new Database(dbPath);
-    
     // Fetch original product name and stock for logging details
-    const product = db.prepare('SELECT item_name, stock FROM products WHERE id = ?').get(productId);
+    const productResult = await db.query('SELECT item_name, stock FROM products WHERE id = $1', [productId]);
+    const product = productResult.rows[0];
     if (!product) {
       return res.status(404).send('Product not found.');
     }
 
     // Security Action: Parameterized query blocks SQL Injection during update operation
-    db.prepare('UPDATE products SET stock = ? WHERE id = ?').run(stock, productId);
+    await db.query('UPDATE products SET stock = $1 WHERE id = $2', [stock, productId]);
 
     // Audit Log: Product updated (captures stock adjustments & restock events)
     if (stock > product.stock) {
       const increment = stock - product.stock;
-      logAdminAction(
+      await logAdminAction(
         process.env.ADMIN_USERNAME || 'admin',
         'PRODUCT_UPDATED',
         `Product restocked. ID: ${productId}, Name: "${product.item_name}", Stock increased by ${increment} (Previous: ${product.stock} -> New: ${stock})`
       );
     } else {
-      logAdminAction(
+      await logAdminAction(
         process.env.ADMIN_USERNAME || 'admin', 
         'PRODUCT_UPDATED', 
         `Stock count adjusted. ID: ${productId}, Name: "${product.item_name}", Updated Stock Count: ${stock}`
@@ -581,8 +563,6 @@ router.post('/ad-minpanel/inventory/update', [
   } catch (error) {
     console.error('[Error] Stock adjustment failed:', error);
     res.status(500).send('Database update failed.');
-  } finally {
-    if (db) db.close();
   }
 });
 

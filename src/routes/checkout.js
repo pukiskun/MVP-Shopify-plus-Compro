@@ -1,11 +1,9 @@
 const express = require('express');
-const Database = require('better-sqlite3');
-const path = require('path');
+const db = require('../config/db');
 const crypto = require('crypto');
 const { body, validationResult } = require('express-validator');
 
 const router = express.Router();
-const dbPath = path.join(__dirname, '../../database.db');
 
 // Helper to calculate cart totals
 const getCartTotals = (cart) => {
@@ -19,7 +17,7 @@ const getCartTotals = (cart) => {
 };
 
 // GET: Render Checkout Page
-router.get('/checkout', (req, res) => {
+router.get('/checkout', async (req, res) => {
   if (!req.session || !req.session.customerId) {
     return res.redirect('/login?redirect=/checkout');
   }
@@ -31,11 +29,10 @@ router.get('/checkout', (req, res) => {
 
   const { totalPrice, totalWeight } = getCartTotals(cart);
 
-  let db;
   let customerInfo = {};
   try {
-    db = new Database(dbPath);
-    const customer = db.prepare('SELECT name, email, phone, shipping_address FROM customers WHERE id = ?').get(req.session.customerId);
+    const customerResult = await db.query('SELECT name, email, phone, shipping_address FROM customers WHERE id = $1', [req.session.customerId]);
+    const customer = customerResult.rows[0];
     if (customer) {
       customerInfo = {
         name: customer.name,
@@ -46,8 +43,6 @@ router.get('/checkout', (req, res) => {
     }
   } catch (error) {
     console.error('[Error] Failed to fetch customer for prepopulating checkout:', error);
-  } finally {
-    if (db) db.close();
   }
 
   res.render('checkout', {
@@ -110,100 +105,73 @@ router.post('/checkout', [
   const customerPhone = formData.phone;
   const customerAddress = formData.address;
 
-  let db;
+  // Open a single client connection from the pool to handle transaction
+  const client = await db.pool.connect();
   try {
-    db = new Database(dbPath);
-    
-    // SQLite transaction (immediate mode blocks other writers to prevent race conditions)
-    const runCheckoutTx = db.transaction((cartItems, customerData) => {
-      let totalPriceDb = 0;
-      let totalWeightDb = 0;
-      const resolvedItems = [];
+    await client.query('BEGIN');
 
-      // 1. Verify stock, resolve price/weight from database for all items
-      for (const item of cartItems) {
-        const qty = Number(item.quantity);
-        if (!Number.isInteger(qty) || qty <= 0) {
-          throw new Error(`Invalid quantity for product ID ${item.id || 'unknown'}.`);
-        }
+    let totalPriceDb = 0;
+    let totalWeightDb = 0;
+    const resolvedItems = [];
 
-        const product = db.prepare('SELECT item_name, price, weight, stock, sku, type FROM products WHERE id = ?').get(item.id);
-        if (!product) {
-          throw new Error(`Product with ID ${item.id} not found in database.`);
-        }
-        if (product.stock < qty) {
-          throw new Error(`Insufficient stock for "${product.item_name}". Available stock: ${product.stock}, requested: ${qty}`);
-        }
-
-        totalPriceDb += product.price * qty;
-        totalWeightDb += product.weight * qty;
-
-        resolvedItems.push({
-          id: item.id,
-          item_name: product.item_name,
-          price: product.price,
-          quantity: qty,
-          sku: product.sku,
-          weight: product.weight,
-          product_type: product.type
-        });
+    // 1. Verify stock and lock rows using SELECT ... FOR UPDATE
+    for (const item of cart) {
+      const qty = Number(item.quantity);
+      if (!Number.isInteger(qty) || qty <= 0) {
+        throw new Error(`Invalid quantity for product ID ${item.id || 'unknown'}.`);
       }
 
-      // 2. Decrement stock
-      for (const item of resolvedItems) {
-        db.prepare('UPDATE products SET stock = stock - ? WHERE id = ?').run(item.quantity, item.id);
+      const productResult = await client.query(
+        'SELECT item_name, price, weight, stock, sku, type FROM products WHERE id = $1 FOR UPDATE',
+        [item.id]
+      );
+      const product = productResult.rows[0];
+
+      if (!product) {
+        throw new Error(`Product with ID ${item.id} not found in database.`);
+      }
+      if (product.stock < qty) {
+        throw new Error(`Insufficient stock for "${product.item_name}". Available stock: ${product.stock}, requested: ${qty}`);
       }
 
-      // 3. Create order record
-      const orderUuid = crypto.randomUUID();
-      // Default status 'PENDING' will be automatically set by SQLite default constraint
-      const insertOrder = db.prepare(`
-        INSERT INTO orders (order_uuid, customer_name, customer_email, customer_phone, customer_address, total_price, total_weight, customer_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(orderUuid, customerData.name, customerData.email, customerData.phone, customerData.address, totalPriceDb, totalWeightDb, customerData.customerId);
+      totalPriceDb += parseInt(product.price, 10) * qty;
+      totalWeightDb += product.weight * qty;
 
-      const orderId = insertOrder.lastInsertRowid;
-
-      // 4. Insert order items
-      const insertItem = db.prepare(`
-        INSERT INTO order_items (order_id, product_id, item_name, price, quantity, sku, weight, product_type)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `);
-
-      for (const item of resolvedItems) {
-        insertItem.run(orderId, item.id, item.item_name, item.price, item.quantity, item.sku, item.weight, item.product_type);
-      }
-
-      return orderUuid;
-    });
-
-    // Run transaction with exponential backoff and jitter retry loop for SQLITE_BUSY
-    const maxRetries = 10;
-    let attempt = 0;
-    let orderUuid;
-
-    while (true) {
-      try {
-        orderUuid = runCheckoutTx.immediate(cart, {
-          name: customerName,
-          email: customerEmail,
-          phone: customerPhone,
-          address: customerAddress,
-          customerId: req.session.customerId
-        });
-        break; // Success
-      } catch (error) {
-        if (error.code === 'SQLITE_BUSY' && attempt < maxRetries) {
-          attempt++;
-          const delay = Math.min(1000, 10 * Math.pow(2, attempt));
-          const jitter = Math.random() * delay;
-          console.warn(`[SQLite Busy] Retrying checkout transaction. Attempt ${attempt}/${maxRetries} after ${jitter.toFixed(2)}ms. Error: ${error.message}`);
-          await new Promise(resolve => setTimeout(resolve, jitter));
-        } else {
-          throw error;
-        }
-      }
+      resolvedItems.push({
+        id: item.id,
+        item_name: product.item_name,
+        price: parseInt(product.price, 10),
+        quantity: qty,
+        sku: product.sku,
+        weight: product.weight,
+        product_type: product.type
+      });
     }
+
+    // 2. Decrement stock
+    for (const item of resolvedItems) {
+      await client.query('UPDATE products SET stock = stock - $1 WHERE id = $2', [item.quantity, item.id]);
+    }
+
+    // 3. Create order record
+    const orderUuid = crypto.randomUUID();
+    const insertOrderResult = await client.query(`
+      INSERT INTO orders (order_uuid, customer_name, customer_email, customer_phone, customer_address, total_price, total_weight, customer_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING id
+    `, [orderUuid, customerName, customerEmail, customerPhone, customerAddress, totalPriceDb, totalWeightDb, req.session.customerId]);
+
+    const orderId = insertOrderResult.rows[0].id;
+
+    // 4. Insert order items
+    for (const item of resolvedItems) {
+      await client.query(`
+        INSERT INTO order_items (order_id, product_id, item_name, price, quantity, sku, weight, product_type)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `, [orderId, item.id, item.item_name, item.price, item.quantity, item.sku, item.weight, item.product_type]);
+    }
+
+    await client.query('COMMIT');
 
     // Clear cart in session
     req.session.cart = [];
@@ -214,9 +182,10 @@ router.post('/checkout', [
     }
     req.session.myOrders.push(orderUuid);
 
-    // Redirect to simulated payment page (instead of confirmation)
+    // Redirect to simulated payment page
     res.redirect(`/checkout/pay/${orderUuid}`);
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('[Transaction Failed] Rollback executed:', error.message);
     res.status(400).render('checkout', {
       title: 'Secure Checkout',
@@ -227,12 +196,12 @@ router.post('/checkout', [
       formData
     });
   } finally {
-    if (db) db.close();
+    client.release();
   }
 });
 
 // GET: Render simulated payment page (TSK-DEV-6.2)
-router.get('/checkout/pay/:uuid', (req, res) => {
+router.get('/checkout/pay/:uuid', async (req, res) => {
   const orderUuid = req.params.uuid;
 
   // Validate UUIDv4 format
@@ -246,10 +215,9 @@ router.get('/checkout/pay/:uuid', (req, res) => {
     return res.status(403).send('Access Denied. You do not have authorization to pay for this order.');
   }
 
-  let db;
   try {
-    db = new Database(dbPath);
-    const order = db.prepare('SELECT * FROM orders WHERE order_uuid = ?').get(orderUuid);
+    const orderResult = await db.query('SELECT * FROM orders WHERE order_uuid = $1', [orderUuid]);
+    const order = orderResult.rows[0];
     if (!order) {
       return res.status(404).send('Order not found.');
     }
@@ -259,7 +227,8 @@ router.get('/checkout/pay/:uuid', (req, res) => {
       return res.redirect(`/checkout/confirmation/${orderUuid}`);
     }
 
-    const items = db.prepare('SELECT * FROM order_items WHERE order_id = ?').all(order.id);
+    const itemsResult = await db.query('SELECT * FROM order_items WHERE order_id = $1', [order.id]);
+    const items = itemsResult.rows;
 
     res.render('pay', {
       title: 'Simulated Payment Gateway',
@@ -269,8 +238,6 @@ router.get('/checkout/pay/:uuid', (req, res) => {
   } catch (error) {
     console.error('Error loading payment gateway simulation:', error);
     res.status(500).send('Internal Server Error');
-  } finally {
-    if (db) db.close();
   }
 });
 
@@ -289,17 +256,16 @@ router.post('/checkout/pay/:uuid', async (req, res) => {
     return res.status(403).send('Access Denied. You do not have authorization to pay for this order.');
   }
 
-  let db;
   try {
-    db = new Database(dbPath);
-    const order = db.prepare('SELECT * FROM orders WHERE order_uuid = ?').get(orderUuid);
+    const orderResult = await db.query('SELECT * FROM orders WHERE order_uuid = $1', [orderUuid]);
+    const order = orderResult.rows[0];
     if (!order) {
       return res.status(404).send('Order not found.');
     }
 
     if (order.status === 'PENDING') {
       // Parameterized update to PAID
-      db.prepare("UPDATE orders SET status = 'PAID' WHERE order_uuid = ?").run(orderUuid);
+      await db.query("UPDATE orders SET status = 'PAID' WHERE order_uuid = $1", [orderUuid]);
       console.log(`[Lifecycle] Order UUID ${orderUuid} transitioned to PAID status.`);
       
       // Dispatch confirmation email
@@ -308,7 +274,7 @@ router.post('/checkout/pay/:uuid', async (req, res) => {
         await sendEmail({
           to: order.customer_email,
           subject: `Order Confirmation - ${orderUuid}`,
-          text: `Hi ${order.customer_name},\n\nThank you for your purchase! Your payment for order ${orderUuid} has been confirmed.\n\nTotal Price: IDR ${order.total_price.toLocaleString('id-ID')}\n\nWe will update you once your order has been shipped.\n\nBest regards,\nMVP Shopify Team`
+          text: `Hi ${order.customer_name},\n\nThank you for your purchase! Your payment for order ${orderUuid} has been confirmed.\n\nTotal Price: IDR ${parseInt(order.total_price, 10).toLocaleString('id-ID')}\n\nWe will update you once your order has been shipped.\n\nBest regards,\nMVP Shopify Team`
         });
       } catch (err) {
         console.error('[Error] Failed to send confirmation email:', err);
@@ -319,13 +285,11 @@ router.post('/checkout/pay/:uuid', async (req, res) => {
   } catch (error) {
     console.error('Error confirming simulated payment:', error);
     res.status(500).send('Internal Server Error');
-  } finally {
-    if (db) db.close();
   }
 });
 
 // GET: Order Confirmation View
-router.get('/checkout/confirmation/:uuid', (req, res) => {
+router.get('/checkout/confirmation/:uuid', async (req, res) => {
   const orderUuid = req.params.uuid;
 
   // Validate UUIDv4 format
@@ -339,16 +303,16 @@ router.get('/checkout/confirmation/:uuid', (req, res) => {
     return res.status(403).send('Access Denied. You do not have authorization to view this receipt.');
   }
 
-  let db;
   try {
-    db = new Database(dbPath);
-    const order = db.prepare('SELECT * FROM orders WHERE order_uuid = ?').get(orderUuid);
+    const orderResult = await db.query('SELECT * FROM orders WHERE order_uuid = $1', [orderUuid]);
+    const order = orderResult.rows[0];
     
     if (!order) {
       return res.status(404).send('Order not found.');
     }
 
-    const items = db.prepare('SELECT * FROM order_items WHERE order_id = ?').all(order.id);
+    const itemsResult = await db.query('SELECT * FROM order_items WHERE order_id = $1', [order.id]);
+    const items = itemsResult.rows;
 
     res.render('confirmation', {
       title: 'Order Confirmed',
@@ -358,8 +322,6 @@ router.get('/checkout/confirmation/:uuid', (req, res) => {
   } catch (error) {
     console.error('Error fetching order receipt details:', error);
     res.status(500).send('Internal Server Error');
-  } finally {
-    if (db) db.close();
   }
 });
 

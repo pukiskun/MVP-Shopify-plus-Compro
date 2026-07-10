@@ -80,8 +80,9 @@ function generateInvoicePdf(order, items, outputStream) {
       doc.font('Helvetica').fillColor('#2d3748').fontSize(9);
     }
     
-    const subtotal = item.price * item.quantity;
-    const formattedPrice = `IDR ${item.price.toLocaleString('id-ID')}`;
+    const priceVal = Number(item.price);
+    const subtotal = priceVal * item.quantity;
+    const formattedPrice = `IDR ${priceVal.toLocaleString('id-ID')}`;
     const formattedSubtotal = `IDR ${subtotal.toLocaleString('id-ID')}`;
     
     doc.text(item.item_name, 50, y, { width: 190 });
@@ -104,12 +105,12 @@ function generateInvoicePdf(order, items, outputStream) {
   
   doc.font('Helvetica-Bold').fillColor('#4a5568').fontSize(10);
   doc.text('Total Weight:', 320, y, { width: 100, align: 'right' });
-  doc.font('Helvetica').text(`${order.total_weight.toLocaleString('id-ID')} g`, 490, y, { width: 70, align: 'right' });
+  doc.font('Helvetica').text(`${Number(order.total_weight).toLocaleString('id-ID')} g`, 490, y, { width: 70, align: 'right' });
   
   y += 18;
   doc.font('Helvetica-Bold').fillColor('#2d3748').fontSize(11);
   doc.text('Grand Total:', 320, y, { width: 100, align: 'right' });
-  doc.text(`IDR ${order.total_price.toLocaleString('id-ID')}`, 450, y, { width: 110, align: 'right' });
+  doc.text(`IDR ${Number(order.total_price).toLocaleString('id-ID')}`, 450, y, { width: 110, align: 'right' });
   
   // Footer notice
   doc.fontSize(8).fillColor('#a0aec0').text('Thank you for shopping with MVP Shopify Store! Please keep this invoice copy for your records.', 50, 720, { align: 'center', width: 500 });

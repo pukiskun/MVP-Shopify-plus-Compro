@@ -1,28 +1,5 @@
 const nodemailer = require('nodemailer');
-const Database = require('better-sqlite3');
-const path = require('path');
-
-const dbPath = path.join(__dirname, '../../database.db');
-
-// Initialize the email logs table if not already present
-let db;
-try {
-  db = new Database(dbPath);
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS email_logs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      recipient TEXT NOT NULL,
-      subject TEXT NOT NULL,
-      body TEXT NOT NULL,
-      message_json TEXT NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-  `);
-} catch (error) {
-  console.error('[Error] Failed to initialize email logs table:', error);
-} finally {
-  if (db) db.close();
-}
+const db = require('../config/db');
 
 // Nodemailer JSON transport for local simulation/mock
 const transporter = nodemailer.createTransport({
@@ -59,17 +36,13 @@ async function sendEmail({ to, subject, text, html }) {
     console.log('========================================\n');
 
     // Log email details to database
-    let dbInstance;
     try {
-      dbInstance = new Database(dbPath);
-      dbInstance.prepare(`
+      await db.query(`
         INSERT INTO email_logs (recipient, subject, body, message_json)
-        VALUES (?, ?, ?, ?)
-      `).run(to, subject, text || html || '', info.message);
+        VALUES ($1, $2, $3, $4)
+      `, [to, subject, text || html || '', info.message]);
     } catch (dbErr) {
       console.error('[Error] Failed to write email dispatch to audit database:', dbErr);
-    } finally {
-      if (dbInstance) dbInstance.close();
     }
 
     return info;

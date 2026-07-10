@@ -1,12 +1,10 @@
 const express = require('express');
-const Database = require('better-sqlite3');
-const path = require('path');
+const db = require('../config/db');
 const { body, validationResult } = require('express-validator');
 const { requireAdmin } = require('../middleware/auth');
 const { logAdminAction } = require('../utils/auditLogger');
 
 const router = express.Router();
-const dbPath = path.join(__dirname, '../../database.db');
 
 // Apply requireAdmin to protect log viewer and orders dashboard
 router.use('/ad-minpanel', requireAdmin);
@@ -21,12 +19,10 @@ const VALID_ACTION_TYPES = [
 ];
 
 // GET: System Audit Logs list view
-router.get('/ad-minpanel/logs', (req, res) => {
+router.get('/ad-minpanel/logs', async (req, res) => {
   const filterType = req.query.type;
   
-  let db;
   try {
-    db = new Database(dbPath);
     let logs;
 
     if (filterType && filterType !== '') {
@@ -37,9 +33,11 @@ router.get('/ad-minpanel/logs', (req, res) => {
       }
       
       // Parameterized query prevents SQLi
-      logs = db.prepare('SELECT id, timestamp, admin_user, action_type, details FROM admin_logs WHERE action_type = ? ORDER BY timestamp DESC').all(filterType);
+      const result = await db.query('SELECT id, timestamp, admin_user, action_type, details FROM admin_logs WHERE action_type = $1 ORDER BY timestamp DESC', [filterType]);
+      logs = result.rows;
     } else {
-      logs = db.prepare('SELECT id, timestamp, admin_user, action_type, details FROM admin_logs ORDER BY timestamp DESC').all();
+      const result = await db.query('SELECT id, timestamp, admin_user, action_type, details FROM admin_logs ORDER BY timestamp DESC');
+      logs = result.rows;
     }
 
     res.render('admin/logs', {
@@ -51,17 +49,12 @@ router.get('/ad-minpanel/logs', (req, res) => {
   } catch (error) {
     console.error('[Error] Log listing failed:', error);
     res.status(500).send('Failed to retrieve system activity logs.');
-  } finally {
-    if (db) db.close();
   }
 });
 
 // GET: Customer Order History dashboard
-router.get('/ad-minpanel/orders', (req, res) => {
-  let db;
+router.get('/ad-minpanel/orders', async (req, res) => {
   try {
-    db = new Database(dbPath);
-    
     let query = `
       SELECT DISTINCT 
         o.id, 
@@ -80,28 +73,33 @@ router.get('/ad-minpanel/orders', (req, res) => {
       WHERE 1=1
     `;
     const params = [];
+    let paramIndex = 1;
 
     if (req.query.search) {
       const searchPattern = `%${req.query.search.trim()}%`;
       query += ` AND (
-        o.customer_name LIKE ? 
-        OR oi.item_name LIKE ? 
-        OR p.sku LIKE ?
+        o.customer_name ILIKE $${paramIndex} 
+        OR oi.item_name ILIKE $${paramIndex + 1} 
+        OR p.sku ILIKE $${paramIndex + 2}
       )`;
       params.push(searchPattern, searchPattern, searchPattern);
+      paramIndex += 3;
     }
 
     if (req.query.status) {
-      query += ' AND o.status = ?';
+      query += ` AND o.status = $${paramIndex}`;
       params.push(req.query.status);
+      paramIndex += 1;
     }
 
     query += ' ORDER BY o.created_at DESC';
-    const orders = db.prepare(query).all(...params);
+    const ordersResult = await db.query(query, params);
+    const orders = ordersResult.rows;
     
     // Retrieve nested items for each order
     for (const order of orders) {
-      order.items = db.prepare('SELECT id, product_id, item_name, price, quantity FROM order_items WHERE order_id = ?').all(order.id);
+      const itemsResult = await db.query('SELECT id, product_id, item_name, price, quantity FROM order_items WHERE order_id = $1', [order.id]);
+      order.items = itemsResult.rows;
     }
 
     res.render('admin/orders', {
@@ -113,8 +111,6 @@ router.get('/ad-minpanel/orders', (req, res) => {
   } catch (error) {
     console.error('[Error] Order listing failed:', error);
     res.status(500).send('Failed to retrieve order history records.');
-  } finally {
-    if (db) db.close();
   }
 });
 
@@ -139,10 +135,9 @@ router.post('/ad-minpanel/orders/update-status/:id', [
 
   const newStatus = req.body.status;
 
-  let db;
   try {
-    db = new Database(dbPath);
-    const order = db.prepare('SELECT id, order_uuid, status, customer_name, customer_email FROM orders WHERE id = ?').get(orderId);
+    const orderResult = await db.query('SELECT id, order_uuid, status, customer_name, customer_email FROM orders WHERE id = $1', [orderId]);
+    const order = orderResult.rows[0];
     
     if (!order) {
       return res.status(404).send('Order not found.');
@@ -175,44 +170,34 @@ router.post('/ad-minpanel/orders/update-status/:id', [
 
     // Process Update
     if (newStatus === 'CANCELLED') {
-      // Execute stock restoration atomically within a database transaction
-      const runCancellationTx = db.transaction((id) => {
+      // Execute stock restoration atomically within a database transaction on a client
+      const client = await db.pool.connect();
+      try {
+        await client.query('BEGIN');
+        
         // 1. Fetch order items
-        const items = db.prepare('SELECT product_id, quantity FROM order_items WHERE order_id = ?').all(id);
+        const itemsResult = await client.query('SELECT product_id, quantity FROM order_items WHERE order_id = $1', [orderId]);
+        const items = itemsResult.rows;
         
         // 2. Increment stock counts
-        const restoreStock = db.prepare('UPDATE products SET stock = stock + ? WHERE id = ?');
         for (const item of items) {
-          restoreStock.run(item.quantity, item.product_id);
+          await client.query('UPDATE products SET stock = stock + $1 WHERE id = $2', [item.quantity, item.product_id]);
         }
 
         // 3. Set status to CANCELLED
-        db.prepare("UPDATE orders SET status = 'CANCELLED' WHERE id = ?").run(id);
-      });
-
-      // Run transaction with retry loop for SQLITE_BUSY
-      const maxRetries = 10;
-      let attempt = 0;
-      while (true) {
-        try {
-          runCancellationTx.immediate(orderId);
-          break; // Success
-        } catch (error) {
-          if (error.code === 'SQLITE_BUSY' && attempt < maxRetries) {
-            attempt++;
-            const delay = Math.min(1000, 10 * Math.pow(2, attempt));
-            const jitter = Math.random() * delay;
-            console.warn(`[SQLite Busy] Retrying cancellation transaction. Attempt ${attempt}/${maxRetries} after ${jitter.toFixed(2)}ms. Error: ${error.message}`);
-            await new Promise(resolve => setTimeout(resolve, jitter));
-          } else {
-            throw error;
-          }
-        }
+        await client.query("UPDATE orders SET status = 'CANCELLED' WHERE id = $1", [orderId]);
+        
+        await client.query('COMMIT');
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+      } finally {
+        client.release();
       }
       console.log(`[Audit] Order ID ${orderId} cancelled and stock restored successfully.`);
     } else {
       // Parameterized update to status
-      db.prepare('UPDATE orders SET status = ? WHERE id = ?').run(newStatus, orderId);
+      await db.query('UPDATE orders SET status = $1 WHERE id = $2', [newStatus, orderId]);
       
       // If order has transitioned to SHIPPED, dispatch shipping email notification
       if (newStatus === 'SHIPPED') {
@@ -230,7 +215,7 @@ router.post('/ad-minpanel/orders/update-status/:id', [
     }
 
     // Log status adjustment event
-    logAdminAction(
+    await logAdminAction(
       process.env.ADMIN_USERNAME || 'admin', 
       'PRODUCT_UPDATED', 
       `Order status transitioned. ID: ${orderId}, UUID: ${order.order_uuid}, Current status: ${currentStatus} -> ${newStatus}`
@@ -240,13 +225,11 @@ router.post('/ad-minpanel/orders/update-status/:id', [
   } catch (error) {
     console.error('[Error] Order status transition failed:', error);
     res.status(500).send('Database update failed.');
-  } finally {
-    if (db) db.close();
   }
 });
 
 // GET: Admin Order Invoice PDF download
-router.get('/ad-minpanel/orders/invoice/:uuid', (req, res) => {
+router.get('/ad-minpanel/orders/invoice/:uuid', async (req, res) => {
   const orderUuid = req.params.uuid;
 
   // Validate UUIDv4 format to protect against path traversal and SQL injection
@@ -254,19 +237,18 @@ router.get('/ad-minpanel/orders/invoice/:uuid', (req, res) => {
     return res.status(400).send('Invalid Order Reference Format.');
   }
 
-  let db;
   try {
-    db = new Database(dbPath);
-    
     // Parameterized lookup prevents SQLi
-    const order = db.prepare('SELECT * FROM orders WHERE order_uuid = ?').get(orderUuid);
+    const orderResult = await db.query('SELECT * FROM orders WHERE order_uuid = $1', [orderUuid]);
+    const order = orderResult.rows[0];
     
     if (!order) {
       return res.status(404).send('Order not found.');
     }
 
     // Fetch order line items
-    const items = db.prepare('SELECT * FROM order_items WHERE order_id = ?').all(order.id);
+    const itemsResult = await db.query('SELECT * FROM order_items WHERE order_id = $1', [order.id]);
+    const items = itemsResult.rows;
 
     const { generateInvoicePdf } = require('../utils/invoicePdfGenerator');
 
@@ -281,8 +263,6 @@ router.get('/ad-minpanel/orders/invoice/:uuid', (req, res) => {
     if (!res.headersSent) {
       res.status(500).send('Failed to generate invoice PDF.');
     }
-  } finally {
-    if (db) db.close();
   }
 });
 

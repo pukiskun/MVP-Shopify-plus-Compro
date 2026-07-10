@@ -4,6 +4,85 @@ Welcome PM, DEV, and QA! This board serves as our shared JIRA-like tracker for a
 
 ---
 
+# 🚀 Sprint 14: Neon PostgreSQL Migration (Proposed)
+
+## Sprint 14 Goal
+Migrate the entire application database layer from synchronous SQLite (`better-sqlite3`) to asynchronous cloud PostgreSQL (`pg` + Neon connection pool). This enables production-grade persistence and concurrent locking, preparing the application for successful stateless Vercel deployments.
+
+## 📊 Sprint 14 Dashboard
+
+| Task ID | Assignee | Task Description | Status |
+| :--- | :--- | :--- | :--- |
+| **[TSK-DEV-14.1]** | DEV | [PostgreSQL Database Connection Pool & Schema Migrations](#tsk-dev-141-postgresql-database-connection-pool--schema-migrations) | `[x] Done` |
+| **[TSK-DEV-14.2]** | DEV | [Refactor Customer Storefront routes to Asynchronous PostgreSQL](#tsk-dev-142-refactor-customer-storefront-routes-to-asynchronous-postgresql) | `[x] Done` |
+| **[TSK-DEV-14.3]** | DEV | [Refactor Admin Dashboard & Reporting routes to Asynchronous PostgreSQL](#tsk-dev-143-refactor-admin-dashboard--reporting-routes-to-asynchronous-postgresql) | `[x] Done` |
+| **[TSK-DEV-14.4]** | DEV | [Integrate PG-Simple Session Storage & Cleanup Task](#tsk-dev-144-integrate-pg-simple-session-storage--cleanup-task) | `[x] Done` |
+| **[TSK-QA-14.1]** | QA | [PostgreSQL Concurrency & Validation E2E Auditing](#tsk-qa-141-postgresql-concurrency--validation-e2e-auditing) | `[ ] Proposed` |
+| **[TSK-QA-14.2]** | QA | [PostgreSQL Security injection Validation](#tsk-qa-142-postgresql-security-injection-validation) | `[ ] Proposed` |
+
+---
+
+## 🛠️ Developer Tickets (DEV) - Sprint 14
+
+### [TSK-DEV-14.1] PostgreSQL Database Connection Pool & Schema Migrations
+*   **Assignee:** DEV (Fullstack Developer)
+*   **Status:** `[x] Done`
+*   **Description:** Initialize database connections to PostgreSQL and write table migrations.
+*   **Action Items:**
+    *   [x] Create shared PostgreSQL client pool file `src/config/db.js`.
+    *   [x] Rewrite `src/config/db-setup.js` to run schema tables migrations using PostgreSQL dialect.
+
+### [TSK-DEV-14.2] Refactor Customer Storefront routes to Asynchronous PostgreSQL
+*   **Assignee:** DEV (Fullstack Developer)
+*   **Status:** `[x] Done`
+*   **Description:** Refactor all customer storefront routes to utilize asynchronous `await db.query()` calls.
+*   **Action Items:**
+    *   [x] Refactor `catalog.js` (Catalog list & detail view).
+    *   [x] Refactor `cart.js` (Add, update, remove items).
+    *   [x] Refactor `customerAuth.js` (Registrations & login).
+    *   [x] Refactor `checkout.js` (Simulated checkout transactions, row locking via `SELECT ... FOR UPDATE`, and confirmation).
+    *   [x] Refactor `customerInvoice.js` (PDF exports).
+
+### [TSK-DEV-14.3] Refactor Admin Dashboard & Reporting routes to Asynchronous PostgreSQL
+*   **Assignee:** DEV (Fullstack Developer)
+*   **Status:** `[x] Done`
+*   **Description:** Refactor all administrative dashboard routes to utilize asynchronous queries.
+*   **Action Items:**
+    *   [x] Refactor `adminAuth.js` (Logins & rate limit checks).
+    *   [x] Refactor `adminProducts.js` (Product CRUD, Quick inventory edits).
+    *   [x] Refactor `adminReporting.js` (Orders manager, log viewer, cancellations).
+
+### [TSK-DEV-14.4] Integrate PG-Simple Session Storage & Cleanup Task
+*   **Assignee:** DEV (Fullstack Developer)
+*   **Status:** `[x] Done`
+*   **Description:** Migrate session storage and background cleaner.
+*   **Action Items:**
+    *   [x] In `src/app.js`, swap the custom SQLite session store with `connect-pg-simple`.
+    *   [x] Refactor `src/utils/abandonedCheckoutCleaner.js` to run asynchronous order cleanups.
+
+---
+
+## 🔍 Quality Assurance Tickets (QA) - Sprint 14
+
+### [TSK-QA-14.1] PostgreSQL Concurrency & Validation E2E Auditing
+*   **Assignee:** QA (Quality Assurance)
+*   **Status:** `[ ] Proposed`
+*   **Description:** Validate database operations, session tracking, and concurrent buying flows.
+*   **Action Items:**
+    *   [ ] Run stress tests simulating concurrent buying under PostgreSQL row locking. Assert stock consistency.
+    *   [ ] Verify session persistence behaves correctly across server restarts.
+
+### [TSK-QA-14.2] PostgreSQL Security injection Validation
+*   **Assignee:** QA (Quality Assurance)
+*   **Status:** `[ ] Proposed`
+*   **Description:** Assert security protections.
+*   **Action Items:**
+    *   [ ] Inject SQLi payloads on search parameters to verify pg query parameterization holds.
+    *   [ ] Verify IDOR session-linked protections are functional on PDF invoice downloads.
+
+---
+---
+
 # 🚀 Sprint 11: Customer Authentication & Profile Management (Completed)
 
 ## Sprint 11 Goal
