@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Local Environment Variables
+.env
+.env.production
+.env.development
+
+# SQLite Database
+*.db
+*.db-journal
+*.db-wal
+*.sqlite
+database.db
+
+# Uploaded Assets
+public/uploads/*
+!public/uploads/.gitkeep
+
+# System and Logs
+*.log
+.gemini/
+.agents/
+.vscode/
+.idea/
+.DS_Store
+CVS
+.svn

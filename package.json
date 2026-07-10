@@ -1,0 +1,24 @@
+{
+  "name": "mvp_shopify",
+  "version": "1.0.0",
+  "description": "E-Commerce Company Profile, Catalog, and Cart MVP",
+  "main": "src/app.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "node src/app.js",
+    "migrate": "node src/config/db-setup.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.1.2",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.19.2",
+    "express-session": "^1.18.0",
+    "express-validator": "^7.1.0",
+    "multer": "^2.2.0",
+    "nodemailer": "^9.0.3",
+    "pdfkit": "^0.19.1",
+    "xss": "^1.0.15"
+  }
+}

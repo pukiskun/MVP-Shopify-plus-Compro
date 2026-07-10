@@ -1,0 +1,63 @@
+<%- include('partials/header') %>
+
+<div style="max-width: 520px; margin: 3rem auto; padding: 0 1.5rem;">
+  <div class="login-header" style="text-align: center; margin-bottom: 2rem;">
+    <h2 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">Create Account</h2>
+    <p style="color: var(--text-secondary);">Register a customer account for a faster checkout experience</p>
+  </div>
+
+  <div class="contact-form-card" style="background-color: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 2rem;">
+    <% if (typeof errors !== 'undefined' && errors && errors.length > 0) { %>
+      <div class="alert alert-danger" style="margin-bottom: 1.5rem; background-color: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); padding: 0.75rem; border-radius: var(--radius-sm);">
+        <strong style="display: block; margin-bottom: 0.25rem;">Registration errors:</strong>
+        <ul style="list-style: inside square; padding-left: 0.5rem;">
+          <% errors.forEach(function(err) { %>
+            <li><%= err %></li>
+          <% }); %>
+        </ul>
+      </div>
+    <% } %>
+
+    <form action="/register" method="POST" autocomplete="off">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="redirect" value="<%= typeof redirect !== 'undefined' ? redirect : '' %>">
+
+      <div class="form-group" style="margin-bottom: 1.25rem;">
+        <label for="name" class="form-label" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Full Name *</label>
+        <input type="text" id="name" name="name" class="form-input" placeholder="John Doe" value="<%= typeof formData !== 'undefined' ? formData.name : '' %>" required autofocus style="width: 100%; padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background-color: var(--bg-primary); color: var(--text-primary);">
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1.25rem;">
+        <label for="email" class="form-label" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Email Address *</label>
+        <input type="email" id="email" name="email" class="form-input" placeholder="john@example.com" value="<%= typeof formData !== 'undefined' ? formData.email : '' %>" required style="width: 100%; padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background-color: var(--bg-primary); color: var(--text-primary);">
+      </div>
+
+      <div class="form-row-2col" style="display: grid; grid-template-columns: 1fr; gap: 1rem; margin-bottom: 1.25rem;">
+        <div class="form-group">
+          <label for="phone" class="form-label" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Phone Number</label>
+          <input type="tel" id="phone" name="phone" class="form-input" placeholder="e.g. 08123456789" value="<%= typeof formData !== 'undefined' ? formData.phone : '' %>" style="width: 100%; padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background-color: var(--bg-primary); color: var(--text-primary);">
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1.25rem;">
+        <label for="shipping_address" class="form-label" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Default Shipping Address</label>
+        <textarea id="shipping_address" name="shipping_address" class="form-input form-textarea-address" placeholder="Enter your full shipping address..." style="width: 100%; padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background-color: var(--bg-primary); color: var(--text-primary); height: 100px;"><%= typeof formData !== 'undefined' ? formData.shipping_address : '' %></textarea>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1.5rem;">
+        <label for="password" class="form-label" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Password *</label>
+        <input type="password" id="password" name="password" class="form-input" placeholder="••••••••" required style="width: 100%; padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background-color: var(--bg-primary); color: var(--text-primary);">
+      </div>
+
+      <button type="submit" class="btn" style="width: 100%; padding: 0.75rem; font-size: 1rem; cursor: pointer;">Register</button>
+    </form>
+
+    <div style="text-align: center; margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.25rem;">
+      <p style="color: var(--text-secondary); font-size: 0.9rem;">
+        Already have an account? <a href="/login<%= (typeof redirect !== 'undefined' && redirect) ? '?redirect=' + encodeURIComponent(redirect) : '' %>" style="color: var(--accent-primary); text-decoration: none; font-weight: 600;">Log in here</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

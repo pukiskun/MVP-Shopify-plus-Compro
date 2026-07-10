@@ -1,0 +1,46 @@
+<%- include('partials/header') %>
+
+<div class="catalog-title-wrapper">
+  <h2>Product Catalog</h2>
+  <span style="color: var(--text-secondary); font-size: 0.95rem;">
+    <%= products.length %> premium items available
+  </span>
+</div>
+
+<div class="catalog-grid">
+  <% if (products.length === 0) { %>
+    <p style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 4rem 0;">
+      No products found in the catalog.
+    </p>
+  <% } else { %>
+    <% products.forEach(function(product) { %>
+      <div class="product-card">
+        <a href="/catalog/<%= product.id %>" class="product-image-link">
+          <img src="<%= product.image_url %>" alt="<%= product.item_name %>" class="product-image" loading="lazy">
+        </a>
+        <div class="product-info">
+          <% if (product.stock === 0) { %>
+            <span class="log-badge badge-danger" style="margin-bottom: 0.5rem; display: inline-block; align-self: flex-start;">Out of Stock</span>
+          <% } %>
+          <h3 class="product-name">
+            <a href="/catalog/<%= product.id %>"><%= product.item_name %></a>
+          </h3>
+          <div class="product-meta">
+            <span class="product-price">
+              <%= new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(product.price) %>
+            </span>
+            <span class="product-weight">
+              <%= product.weight %> g
+            </span>
+          </div>
+          <p class="product-desc"><%= product.description %></p>
+          <a href="/catalog/<%= product.id %>" class="btn btn-secondary" style="width: 100%; margin-top: auto; font-size: 0.9rem;">
+            View Details
+          </a>
+        </div>
+      </div>
+    <% }); %>
+  <% } %>
+</div>
+
+<%- include('partials/footer') %>

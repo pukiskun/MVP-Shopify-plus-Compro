@@ -1,0 +1,89 @@
+<%- include('partials/header') %>
+
+<div style="margin-bottom: 2rem;">
+  <a href="/catalog" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 0.5rem; transition: var(--transition-fast);">
+    ← Back to Product Catalog
+  </a>
+</div>
+
+<div class="product-detail-wrapper">
+  <div class="product-detail-image-container">
+    <img src="<%= product.image_url %>" alt="<%= product.item_name %>" class="product-detail-image">
+  </div>
+  
+  <div class="product-detail-content">
+    <h1><%= product.item_name %></h1>
+    
+    <div class="product-detail-price">
+      <%= new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(product.price) %>
+    </div>
+    
+    <div class="product-detail-specs">
+      <div class="spec-item">
+        <span class="spec-label">Weight</span>
+        <strong><%= product.weight %> grams</strong>
+      </div>
+      <div class="spec-item">
+        <span class="spec-label">Availability</span>
+        <% if (product.stock === 0) { %>
+          <strong style="color: var(--danger);">Out of Stock</strong>
+        <% } else { %>
+          <strong style="color: var(--accent-primary);">In Stock (<%= product.stock %> left)</strong>
+        <% } %>
+      </div>
+      <div class="spec-item">
+        <span class="spec-label">Shipping</span>
+        <strong>J&T Carrier</strong>
+      </div>
+    </div>
+    
+    <div class="product-detail-desc">
+      <%= product.description %>
+    </div>
+    
+    <form action="/cart/add" method="POST" style="display: flex; gap: 1rem; align-items: center;">
+      <!-- Hidden field for product id. No price is sent from the frontend to maintain integrity -->
+      <input type="hidden" name="productId" value="<%= product.id %>">
+      
+      <div class="quantity-controls">
+        <button type="button" class="quantity-btn" id="btn-minus" <%= product.stock === 0 ? 'disabled' : '' %>>−</button>
+        <input type="number" id="qty-input" name="quantity" class="quantity-input" value="<%= product.stock === 0 ? '0' : '1' %>" min="<%= product.stock === 0 ? '0' : '1' %>" max="<%= Math.min(10, product.stock) %>" readonly>
+        <button type="button" class="quantity-btn" id="btn-plus" <%= product.stock === 0 ? 'disabled' : '' %>>+</button>
+      </div>
+      
+      <% if (product.stock === 0) { %>
+        <button type="button" class="btn btn-secondary" style="flex: 1; cursor: not-allowed;" disabled>Out of Stock</button>
+      <% } else { %>
+        <button type="submit" class="btn" style="flex: 1;">Add to Shopping Cart</button>
+      <% } %>
+    </form>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const btnMinus = document.getElementById('btn-minus');
+    const btnPlus = document.getElementById('btn-plus');
+    const qtyInput = document.getElementById('qty-input');
+    const maxStock = parseInt('<%= product.stock %>', 10);
+    
+    if (btnMinus && btnPlus && qtyInput && maxStock > 0) {
+      btnMinus.addEventListener('click', () => {
+        let currentVal = parseInt(qtyInput.value, 10);
+        if (currentVal > 1) {
+          qtyInput.value = currentVal - 1;
+        }
+      });
+      
+      btnPlus.addEventListener('click', () => {
+        let currentVal = parseInt(qtyInput.value, 10);
+        // Clamp to either 10 items max or the actual maximum stock count
+        if (currentVal < Math.min(10, maxStock)) {
+          qtyInput.value = currentVal + 1;
+        }
+      });
+    }
+  });
+</script>
+
+<%- include('partials/footer') %>

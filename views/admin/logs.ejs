@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> | Admin Panel</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    .admin-header-nav {
+      background-color: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .admin-brand {
+      font-weight: 700;
+      color: var(--text-primary);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .admin-brand span {
+      color: var(--accent-primary);
+    }
+    .admin-container {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 2rem;
+    }
+    .dashboard-actions-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+    .product-table-wrapper {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      overflow-x: auto;
+    }
+    .product-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+    .product-table th, .product-table td {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: middle;
+    }
+    .product-table th {
+      background-color: rgba(15, 23, 42, 0.4);
+      color: var(--text-secondary);
+      font-weight: 600;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .product-table tr:last-child td {
+      border-bottom: none;
+    }
+    .log-badge {
+      display: inline-block;
+      padding: 0.25rem 0.6rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    .badge-success { background-color: rgba(16, 185, 129, 0.1); color: var(--accent-primary); border: 1px solid rgba(16, 185, 129, 0.2); }
+    .badge-danger { background-color: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); }
+    .badge-info { background-color: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.2); }
+    .badge-warning { background-color: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); }
+    .badge-muted { background-color: var(--bg-tertiary); color: var(--text-secondary); border: 1px solid var(--border-color); }
+  </style>
+</head>
+<body style="background-color: var(--bg-primary); color: var(--text-primary); font-family: var(--font-sans);">
+
+  <header class="admin-header-nav">
+    <a href="/ad-minpanel/products" class="admin-brand">
+      <span>✦</span> MVP Shopify Admin Panel
+    </a>
+    <div style="display: flex; gap: 1.5rem; align-items: center;">
+      <a href="/ad-minpanel/products" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95rem;">Catalog Dashboard</a>
+      <a href="/ad-minpanel/inventory" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95rem;">Inventory</a>
+      <a href="/ad-minpanel/orders" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95rem;">Order History</a>
+      <a href="/ad-minpanel/logs" style="color: var(--text-primary); text-decoration: none; font-size: 0.95rem; font-weight: 600;">Audit Logs</a>
+      <a href="/ad-minpanel/logout" class="btn btn-secondary" style="padding: 0.5rem 1.25rem; font-size: 0.85rem;">Sign Out</a>
+    </div>
+  </header>
+
+  <div class="admin-container">
+    <div class="dashboard-actions-header">
+      <div>
+        <h2 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 0.25rem;">Security & Audit Logs</h2>
+        <p style="color: var(--text-secondary); font-size: 0.95rem;">Review chronological administrator events and authentication histories</p>
+      </div>
+      
+      <div>
+        <!-- Filter dropdown -->
+        <select id="filter-type-select" class="form-input" style="min-width: 220px; min-height: 44px;" onchange="applyLogFilter(this.value)">
+          <option value="">-- View All Logs --</option>
+          <% validTypes.forEach(function(type) { %>
+            <option value="<%= type %>" <%= filterType === type ? 'selected' : '' %>><%= type %></option>
+          <% }); %>
+        </select>
+      </div>
+    </div>
+
+    <div class="product-table-wrapper">
+      <table class="product-table">
+        <thead>
+          <tr>
+            <th style="width: 180px;">Timestamp</th>
+            <th style="width: 140px;">Admin User</th>
+            <th style="width: 180px;">Event Type</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (logs.length === 0) { %>
+            <tr>
+              <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 4rem 0;">
+                No matching system log entries found.
+              </td>
+            </tr>
+          <% } else { %>
+            <% logs.forEach(function(log) { %>
+              <tr>
+                <td style="color: var(--text-muted); font-size: 0.9rem;">
+                  <!-- Chronological timestamp display -->
+                  <%= log.timestamp %>
+                </td>
+                <td style="font-weight: 600;">
+                  <!-- Escaped Username output -->
+                  <%= log.admin_user %>
+                </td>
+                <td>
+                  <!-- Event type badges -->
+                  <% if (log.action_type === 'LOGIN_SUCCESS') { %>
+                    <span class="log-badge badge-success">LOGIN_SUCCESS</span>
+                  <% } else if (log.action_type === 'LOGIN_FAILURE') { %>
+                    <span class="log-badge badge-danger">LOGIN_FAILURE</span>
+                  <% } else if (log.action_type === 'PRODUCT_CREATED') { %>
+                    <span class="log-badge badge-info">PRODUCT_CREATED</span>
+                  <% } else if (log.action_type === 'PRODUCT_UPDATED') { %>
+                    <span class="log-badge badge-warning">PRODUCT_UPDATED</span>
+                  <% } else if (log.action_type === 'PRODUCT_DELETED') { %>
+                    <span class="log-badge badge-muted">PRODUCT_DELETED</span>
+                  <% } else { %>
+                    <span class="log-badge"><%= log.action_type %></span>
+                  <% } %>
+                </td>
+                <td style="color: var(--text-secondary); font-size: 0.95rem;">
+                  <!-- Escaped Details output -->
+                  <%= log.details %>
+                </td>
+              </tr>
+            <% }); %>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    function applyLogFilter(value) {
+      if (value) {
+        window.location.href = '/ad-minpanel/logs?type=' + encodeURIComponent(value);
+      } else {
+        window.location.href = '/ad-minpanel/logs';
+      }
+    }
+  </script>
+
+</body>
+</html>

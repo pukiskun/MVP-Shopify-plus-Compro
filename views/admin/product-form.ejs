@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> | Admin Panel</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    .admin-header-nav {
+      background-color: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .admin-brand {
+      font-weight: 700;
+      color: var(--text-primary);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .admin-brand span {
+      color: var(--accent-primary);
+    }
+    .form-container {
+      max-width: 650px;
+      margin: 3rem auto;
+      padding: 0 1.5rem;
+    }
+  </style>
+</head>
+<body style="background-color: var(--bg-primary); color: var(--text-primary); font-family: var(--font-sans);">
+
+  <header class="admin-header-nav">
+    <a href="/ad-minpanel/products" class="admin-brand">
+      <span>✦</span> MVP Shopify Admin Panel
+    </a>
+    <div>
+      <a href="/ad-minpanel/products" class="btn btn-secondary" style="padding: 0.5rem 1.25rem; font-size: 0.85rem;">Cancel & Back</a>
+    </div>
+  </header>
+
+  <div class="form-container">
+    <div style="margin-bottom: 2rem;">
+      <h2 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 0.25rem;"><%= isEdit ? 'Edit Product Details' : 'Create Catalog Product' %></h2>
+      <p style="color: var(--text-secondary); font-size: 0.95rem;">
+        <%= isEdit ? 'Update product pricing, images, and descriptions in the storefront database' : 'Add a new item to the customer product listing' %>
+      </p>
+    </div>
+
+    <div class="contact-form-card">
+      <% if (errors && errors.length > 0) { %>
+        <div class="alert alert-danger" style="margin-bottom: 1.5rem;">
+          <strong style="display: block; margin-bottom: 0.25rem;">Form validation failed:</strong>
+          <ul style="list-style: inside square; padding-left: 0.5rem;">
+            <% errors.forEach(function(err) { %>
+              <li><%= err %></li>
+            <% }); %>
+          </ul>
+        </div>
+      <% } %>
+
+      <form action="<%= isEdit ? '/ad-minpanel/products/edit/' + product.id : '/ad-minpanel/products/new' %>?_csrf=<%= csrfToken %>" method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="form-group">
+          <label for="item_name" class="form-label">Product Name *</label>
+          <input type="text" id="item_name" name="item_name" class="form-input" placeholder="e.g. Wireless Gaming Keyboard" value="<%= product.item_name || '' %>" required maxlength="150">
+          <span style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-top: 0.25rem;">Maximum 150 characters. Characters will be sanitized.</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1rem;">
+          <div class="form-group">
+            <label for="sku" class="form-label">SKU *</label>
+            <input type="text" id="sku" name="sku" class="form-input" placeholder="e.g. SKU-WALLET-01" value="<%= product.sku || '' %>" required>
+            <span style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-top: 0.25rem;">Unique product identifier.</span>
+          </div>
+
+          <div class="form-group">
+            <label for="type" class="form-label">Product Type *</label>
+            <input type="text" id="type" name="type" class="form-input" placeholder="e.g. Accessories" value="<%= product.type || '' %>" required>
+            <span style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-top: 0.25rem;">Category for filtering.</span>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.25rem;">
+          <div class="form-group">
+            <label for="price" class="form-label">Price (Rupiah) *</label>
+            <input type="number" id="price" name="price" class="form-input" placeholder="e.g. 150000" value="<%= product.price || '' %>" min="0" required>
+            <span style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-top: 0.25rem;">e.g. 250000.</span>
+          </div>
+
+          <div class="form-group">
+            <label for="weight" class="form-label">Weight (Grams) *</label>
+            <input type="number" id="weight" name="weight" class="form-input" placeholder="e.g. 250" value="<%= product.weight || '' %>" min="1" required>
+            <span style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-top: 0.25rem;">For shipping rates.</span>
+          </div>
+
+          <div class="form-group">
+            <label for="stock" class="form-label">Stock Count *</label>
+            <input type="number" id="stock" name="stock" class="form-input" placeholder="e.g. 10" value="<%= product.stock || '0' %>" min="0" required>
+            <span style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-top: 0.25rem;">Inventory stock.</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="image_url" class="form-label">Image URL</label>
+          <input type="url" id="image_url" name="image_url" class="form-input" placeholder="https://example.com/photo.jpg" value="<%= product.image_url || '' %>">
+          <span style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-top: 0.25rem;">Optional link. Must start with http:// or https://.</span>
+        </div>
+
+        <div class="form-group">
+          <label for="productImage" class="form-label">Upload Product Image</label>
+          <input type="file" id="productImage" name="productImage" class="form-input" accept="image/png, image/jpeg, image/jpg, image/gif">
+          <span style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-top: 0.25rem;">Or upload an image file (png, jpg, jpeg, gif. Max 5MB).</span>
+        </div>
+
+        <div class="form-group">
+          <label for="description" class="form-label">Description</label>
+          <textarea id="description" name="description" class="form-input" placeholder="Describe the product specifications..." style="min-height: 140px;"><%= product.description || '' %></textarea>
+          <span style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-top: 0.25rem;">HTML tags will be automatically sanitized.</span>
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 1rem; margin-bottom: 1rem;">
+          <input type="checkbox" id="is_hidden" name="is_hidden" value="1" <%= product.is_hidden ? 'checked' : '' %> style="width: 1.25rem; height: 1.25rem; cursor: pointer;">
+          <label for="is_hidden" style="margin-bottom: 0; cursor: pointer; font-weight: 500;">Hide this product from the storefront (Hidden status)</label>
+        </div>
+
+        <button type="submit" class="btn" style="width: 100%; font-size: 1rem; margin-top: 1.5rem;">
+          <%= isEdit ? 'Save Changes' : 'Publish Product' %>
+        </button>
+      </form>
+    </div>
+  </div>
+
+</body>
+</html>

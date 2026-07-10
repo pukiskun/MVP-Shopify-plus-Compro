@@ -1,0 +1,76 @@
+<%- include('partials/header') %>
+
+<div class="contact-container">
+  <div class="contact-info">
+    <h2>Get in Touch</h2>
+    <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+      Have any questions about our products, shipping routes, or security measures? Drop us a message, and our team will get back to you within 24 hours.
+    </p>
+    
+    <ul class="contact-info-list">
+      <li class="contact-info-item">
+        <div class="contact-info-icon">📍</div>
+        <div class="contact-info-text">
+          <h4>Our Headquarters</h4>
+          <p>Sudirman Central Business District (SCBD), Jakarta, Indonesia</p>
+        </div>
+      </li>
+      <li class="contact-info-item">
+        <div class="contact-info-icon">✉️</div>
+        <div class="contact-info-text">
+          <h4>Email Inquiries</h4>
+          <p>support@mvpshopify.demo</p>
+        </div>
+      </li>
+      <li class="contact-info-item">
+        <div class="contact-info-icon">📞</div>
+        <div class="contact-info-text">
+          <h4>Customer Care Line</h4>
+          <p>+62 (21) 555-0199 (Mon - Fri, 9 AM - 5 PM WIB)</p>
+        </div>
+      </li>
+    </ul>
+  </div>
+  
+  <div class="contact-form-card">
+    <h3>Send a Secure Message</h3>
+    
+    <% if (errors && errors.length > 0) { %>
+      <div class="alert alert-danger">
+        <strong style="display: block; margin-bottom: 0.25rem;">Please correct the errors below:</strong>
+        <ul style="list-style: inside square; padding-left: 0.5rem;">
+          <% errors.forEach(function(error) { %>
+            <li><%= error %></li>
+          <% }); %>
+        </ul>
+      </div>
+    <% } %>
+    
+    <% if (success) { %>
+      <div class="alert alert-success">
+        <%= success %>
+      </div>
+    <% } %>
+    
+    <form action="/contact" method="POST" novalidate>
+      <div class="form-group">
+        <label for="name" class="form-label">Full Name</label>
+        <input type="text" id="name" name="name" class="form-input" placeholder="John Doe" value="<%= formData.name || '' %>" required maxlength="100">
+      </div>
+      
+      <div class="form-group">
+        <label for="email" class="form-label">Email Address</label>
+        <input type="email" id="email" name="email" class="form-input" placeholder="john@example.com" value="<%= formData.email || '' %>" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="message" class="form-label">Your Message</label>
+        <textarea id="message" name="message" class="form-input" placeholder="Write your message here..." required maxlength="1000"><%= formData.message || '' %></textarea>
+      </div>
+      
+      <button type="submit" class="btn" style="width: 100%;">Send Message Safely</button>
+    </form>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

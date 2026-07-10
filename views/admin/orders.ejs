@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> | Admin Panel</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    .admin-header-nav {
+      background-color: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .admin-brand {
+      font-weight: 700;
+      color: var(--text-primary);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .admin-brand span {
+      color: var(--accent-primary);
+    }
+    .admin-container {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 2rem;
+    }
+    .order-card {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 2rem;
+      margin-bottom: 2.5rem;
+      box-shadow: var(--shadow-md);
+    }
+    .order-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 1.25rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .order-uuid {
+      font-family: monospace;
+      background-color: var(--bg-primary);
+      padding: 0.25rem 0.5rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+      font-size: 0.9rem;
+      color: var(--accent-primary);
+    }
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+      background-color: rgba(15, 23, 42, 0.2);
+      padding: 1.25rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(255, 255, 255, 0.03);
+    }
+    .meta-title {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: block;
+      margin-bottom: 0.25rem;
+    }
+    .meta-val {
+      font-weight: 600;
+      color: var(--text-primary);
+      font-size: 0.95rem;
+    }
+    .nested-items-title {
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      font-size: 1.1rem;
+      color: var(--accent-primary);
+    }
+    .nested-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.5rem;
+    }
+    .nested-table th, .nested-table td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px dashed var(--border-color);
+    }
+    .nested-table th {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .nested-table tr:last-child td {
+      border-bottom: none;
+    }
+    .log-badge {
+      display: inline-block;
+      padding: 0.25rem 0.6rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    .badge-pending { background-color: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); }
+    .badge-paid { background-color: rgba(16, 185, 129, 0.1); color: var(--accent-primary); border: 1px solid rgba(16, 185, 129, 0.2); }
+    .badge-shipped { background-color: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.2); }
+    .badge-delivered { background-color: rgba(99, 102, 241, 0.1); color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.2); }
+    .badge-cancelled { background-color: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); }
+  </style>
+</head>
+<body style="background-color: var(--bg-primary); color: var(--text-primary); font-family: var(--font-sans);">
+
+  <header class="admin-header-nav">
+    <a href="/ad-minpanel/products" class="admin-brand">
+      <span>✦</span> MVP Shopify Admin Panel
+    </a>
+    <div style="display: flex; gap: 1.5rem; align-items: center;">
+      <a href="/ad-minpanel/products" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95rem;">Catalog Dashboard</a>
+      <a href="/ad-minpanel/inventory" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95rem;">Inventory</a>
+      <a href="/ad-minpanel/orders" style="color: var(--text-primary); text-decoration: none; font-size: 0.95rem; font-weight: 600;">Order History</a>
+      <a href="/ad-minpanel/logs" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95rem;">Audit Logs</a>
+      <a href="/ad-minpanel/logout" class="btn btn-secondary" style="padding: 0.5rem 1.25rem; font-size: 0.85rem;">Sign Out</a>
+    </div>
+  </header>
+
+  <div class="admin-container">
+    <div style="margin-bottom: 2rem;">
+      <h2 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 0.25rem;">Customer Purchase Orders</h2>
+      <p style="color: var(--text-secondary); font-size: 0.95rem;">Review checkout transaction lifecycles, adjust shipping statuses, and cancel orders</p>
+    </div>
+
+    <!-- Search and Status Filter Controls -->
+    <div style="background-color: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem 1.5rem; margin-bottom: 2.5rem;">
+      <form action="/ad-minpanel/orders" method="GET" style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+        <div class="form-group" style="flex: 1; min-width: 250px; margin-bottom: 0;">
+          <label for="search" class="form-label" style="font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">Search Orders</label>
+          <input type="text" id="search" name="search" class="form-input" placeholder="Search by customer name, SKU, or product name..." value="<%= search %>" style="padding: 0.5rem 0.75rem; font-size: 0.9rem;">
+        </div>
+        <div class="form-group" style="width: 220px; margin-bottom: 0;">
+          <label for="status" class="form-label" style="font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">Order Status</label>
+          <select id="status" name="status" class="form-input" style="padding: 0.5rem 0.75rem; font-size: 0.9rem; cursor: pointer; background-color: var(--bg-primary);">
+            <option value="">All Statuses</option>
+            <option value="PENDING" <%= selectedStatus === 'PENDING' ? 'selected' : '' %>>PENDING</option>
+            <option value="PAID" <%= selectedStatus === 'PAID' ? 'selected' : '' %>>PAID</option>
+            <option value="SHIPPED" <%= selectedStatus === 'SHIPPED' ? 'selected' : '' %>>SHIPPED</option>
+            <option value="DELIVERED" <%= selectedStatus === 'DELIVERED' ? 'selected' : '' %>>DELIVERED</option>
+            <option value="CANCELLED" <%= selectedStatus === 'CANCELLED' ? 'selected' : '' %>>CANCELLED</option>
+          </select>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+          <button type="submit" class="btn" style="padding: 0.5rem 1.25rem; font-size: 0.9rem;">Apply Filters</button>
+          <a href="/ad-minpanel/orders" class="btn btn-secondary" style="padding: 0.5rem 1.25rem; font-size: 0.9rem; text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">Reset</a>
+        </div>
+      </form>
+    </div>
+
+    <% if (orders.length === 0) { %>
+      <div style="background-color: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 4rem; text-align: center; color: var(--text-muted);">
+        No customer checkout transactions found matching the filter criteria.
+      </div>
+    <% } else { %>
+      <% orders.forEach(function(order) { %>
+        <div class="order-card">
+          <div class="order-header-row">
+            <div>
+              <span class="meta-title">Order Reference</span>
+              <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                <span class="order-uuid"><%= order.order_uuid %></span>
+                <a href="/ad-minpanel/orders/invoice/<%= order.order_uuid %>" class="btn" target="_blank" style="min-height: 36px; padding: 0 0.75rem; font-size: 0.8rem; text-decoration: none; display: inline-flex; align-items: center;">Download PDF Invoice</a>
+              </div>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; align-items: center;">
+              <!-- Current status badge -->
+              <div>
+                <span class="meta-title" style="text-align: right;">Status</span>
+                <% if (order.status === 'PENDING') { %>
+                  <span class="log-badge badge-pending">PENDING</span>
+                <% } else if (order.status === 'PAID') { %>
+                  <span class="log-badge badge-paid">PAID</span>
+                <% } else if (order.status === 'SHIPPED') { %>
+                  <span class="log-badge badge-shipped">SHIPPED</span>
+                <% } else if (order.status === 'DELIVERED') { %>
+                  <span class="log-badge badge-delivered">DELIVERED</span>
+                <% } else if (order.status === 'CANCELLED') { %>
+                  <span class="log-badge badge-cancelled">CANCELLED</span>
+                <% } %>
+              </div>
+
+              <!-- Admin controls for status changes -->
+              <% if (order.status !== 'DELIVERED' && order.status !== 'CANCELLED') { %>
+                <div style="margin-left: 1rem;">
+                  <span class="meta-title">Modify Status</span>
+                  
+                  <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <% if (order.status === 'PENDING') { %>
+                      <form action="/ad-minpanel/orders/update-status/<%= order.id %>" method="POST" style="display: inline-block;">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        <input type="hidden" name="status" value="PAID">
+                        <button type="submit" class="btn" style="min-height: 44px; font-size: 0.85rem; padding: 0 1rem; background-color: var(--accent-primary);">Confirm Payment</button>
+                      </form>
+                      <form action="/ad-minpanel/orders/update-status/<%= order.id %>" method="POST" style="display: inline-block;" onsubmit="return confirm('Are you sure you want to cancel this order? This will restore stocks.');">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        <input type="hidden" name="status" value="CANCELLED">
+                        <button type="submit" class="btn btn-danger" style="min-height: 44px; font-size: 0.85rem; padding: 0 1rem;">Cancel Order</button>
+                      </form>
+                    <% } else if (order.status === 'PAID') { %>
+                      <form action="/ad-minpanel/orders/update-status/<%= order.id %>" method="POST" style="display: inline-block;">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        <input type="hidden" name="status" value="SHIPPED">
+                        <button type="submit" class="btn" style="min-height: 44px; font-size: 0.85rem; padding: 0 1rem; background-color: #3b82f6; color: white;">Mark Shipped</button>
+                      </form>
+                      <form action="/ad-minpanel/orders/update-status/<%= order.id %>" method="POST" style="display: inline-block;" onsubmit="return confirm('Are you sure you want to cancel this order? This will restore stocks.');">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        <input type="hidden" name="status" value="CANCELLED">
+                        <button type="submit" class="btn btn-danger" style="min-height: 44px; font-size: 0.85rem; padding: 0 1rem;">Cancel Order</button>
+                      </form>
+                    <% } else if (order.status === 'SHIPPED') { %>
+                      <form action="/ad-minpanel/orders/update-status/<%= order.id %>" method="POST" style="display: inline-block;">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        <input type="hidden" name="status" value="DELIVERED">
+                        <button type="submit" class="btn" style="min-height: 44px; font-size: 0.85rem; padding: 0 1rem; background-color: #6366f1; color: white;">Mark Delivered</button>
+                      </form>
+                    <% } %>
+                  </div>
+                </div>
+              <% } %>
+            </div>
+            
+            <div style="text-align: right;">
+              <span class="meta-title">Placed At</span>
+              <span style="color: var(--text-muted); font-size: 0.9rem;"><%= order.created_at %></span>
+            </div>
+          </div>
+
+          <div class="meta-grid">
+            <div>
+              <span class="meta-title">Customer Name</span>
+              <span class="meta-val"><%= order.customer_name %></span>
+            </div>
+            <div>
+              <span class="meta-title">Email Address</span>
+              <span class="meta-val"><%= order.customer_email %></span>
+            </div>
+            <div>
+              <span class="meta-title">Phone Number</span>
+              <span class="meta-val"><%= order.customer_phone %></span>
+            </div>
+            <div>
+              <span class="meta-title">Shipping Address</span>
+              <span class="meta-val" style="display: block; white-space: pre-line;"><%= order.customer_address %></span>
+            </div>
+          </div>
+
+          <div class="nested-items-title">Purchased Items</div>
+          <div style="overflow-x: auto; background-color: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+            <table class="nested-table">
+              <thead>
+                <tr>
+                  <th>Product Name</th>
+                  <th>Unit Price</th>
+                  <th>Quantity</th>
+                  <th style="text-align: right;">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% order.items.forEach(function(item) { %>
+                  <tr>
+                    <td style="font-weight: 500;"><%= item.item_name %></td>
+                    <td>
+                      <%= new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(item.price) %>
+                    </td>
+                    <td><%= item.quantity %></td>
+                    <td style="text-align: right; font-weight: 600; color: var(--text-primary);">
+                      <%= new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(item.price * item.quantity) %>
+                    </td>
+                  </tr>
+                <% }); %>
+                <tr style="background-color: rgba(255, 255, 255, 0.01);">
+                  <td colspan="2" style="border: none;"></td>
+                  <td style="font-weight: 700; border: none; color: var(--text-secondary);">Total Weight:</td>
+                  <td style="text-align: right; font-weight: 700; border: none; color: var(--text-secondary);"><%= order.total_weight %> g</td>
+                </tr>
+                <tr style="background-color: rgba(255, 255, 255, 0.01);">
+                  <td colspan="2" style="border: none;"></td>
+                  <td style="font-weight: 700; border: none; color: var(--accent-primary);">Grand Total:</td>
+                  <td style="text-align: right; font-weight: 700; border: none; color: var(--accent-primary); font-size: 1.1rem;">
+                    <%= new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(order.total_price) %>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      <% }); %>
+    <% } %>
+  </div>
+
+</body>
+</html>

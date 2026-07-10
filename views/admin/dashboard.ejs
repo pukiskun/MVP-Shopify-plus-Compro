@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> | Admin Dashboard</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    .admin-header-nav {
+      background-color: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .admin-brand {
+      font-weight: 700;
+      color: var(--text-primary);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .admin-brand span {
+      color: var(--accent-primary);
+    }
+    .admin-container {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 2rem;
+    }
+    .dashboard-actions-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+    .product-table-wrapper {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      overflow-x: auto;
+    }
+    .product-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+    .product-table th, .product-table td {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: middle;
+    }
+    .product-table th {
+      background-color: rgba(15, 23, 42, 0.4);
+      color: var(--text-secondary);
+      font-weight: 600;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .product-table tr:last-child td {
+      border-bottom: none;
+    }
+    .tbl-thumb {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+    }
+    .actions-cell {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+    }
+  </style>
+</head>
+<body style="background-color: var(--bg-primary); color: var(--text-primary); font-family: var(--font-sans);">
+
+  <header class="admin-header-nav">
+    <a href="/ad-minpanel/products" class="admin-brand">
+      <span>✦</span> MVP Shopify Admin Panel
+    </a>
+    <div style="display: flex; gap: 1.5rem; align-items: center;">
+      <a href="/ad-minpanel/products" style="color: var(--text-primary); text-decoration: none; font-size: 0.95rem; font-weight: 600;">Catalog Dashboard</a>
+      <a href="/ad-minpanel/inventory" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95rem;">Inventory</a>
+      <a href="/ad-minpanel/orders" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95rem;">Order History</a>
+      <a href="/ad-minpanel/logs" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95rem;">Audit Logs</a>
+      <a href="/ad-minpanel/logout" class="btn btn-secondary" style="padding: 0.5rem 1.25rem; font-size: 0.85rem;">Sign Out</a>
+    </div>
+  </header>
+
+  <div class="admin-container">
+    <div class="dashboard-actions-header">
+      <div>
+        <h2 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 0.25rem;">Products Catalog Manager</h2>
+        <p style="color: var(--text-secondary); font-size: 0.95rem;">Add, update, or remove inventory products from the store</p>
+      </div>
+      <a href="/ad-minpanel/products/new" class="btn">+ Add Product</a>
+    </div>
+
+    <!-- Search and Type Filter Controls -->
+    <div style="background-color: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem 1.5rem; margin-bottom: 1.5rem;">
+      <form action="/ad-minpanel/products" method="GET" style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+        <div class="form-group" style="flex: 1; min-width: 250px; margin-bottom: 0;">
+          <label for="search" class="form-label" style="font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">Search Products</label>
+          <input type="text" id="search" name="search" class="form-input" placeholder="Search by name or SKU..." value="<%= search %>" style="padding: 0.5rem 0.75rem; font-size: 0.9rem;">
+        </div>
+        <div class="form-group" style="width: 220px; margin-bottom: 0;">
+          <label for="type" class="form-label" style="font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">Product Type</label>
+          <select id="type" name="type" class="form-input" style="padding: 0.5rem 0.75rem; font-size: 0.9rem; cursor: pointer; background-color: var(--bg-primary);">
+            <option value="">All Types</option>
+            <% types.forEach(function(t) { %>
+              <option value="<%= t %>" <%= selectedType === t ? 'selected' : '' %>><%= t %></option>
+            <% }); %>
+          </select>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+          <button type="submit" class="btn" style="padding: 0.5rem 1.25rem; font-size: 0.9rem;">Apply Filters</button>
+          <a href="/ad-minpanel/products" class="btn btn-secondary" style="padding: 0.5rem 1.25rem; font-size: 0.9rem; text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">Reset</a>
+        </div>
+      </form>
+    </div>
+
+    <div class="product-table-wrapper">
+      <table class="product-table">
+        <thead>
+          <tr>
+            <th style="width: 80px;">Image</th>
+            <th>SKU</th>
+            <th>Item Name</th>
+            <th>Type</th>
+            <th>Price</th>
+            <th>Weight</th>
+            <th>Stock</th>
+            <th>Status</th>
+            <th style="width: 180px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (products.length === 0) { %>
+            <tr>
+              <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 4rem 0;">
+                No items found matching the filter criteria.
+              </td>
+            </tr>
+          <% } else { %>
+            <% products.forEach(function(product) { %>
+              <tr>
+                <td>
+                  <img src="<%= product.image_url %>" alt="<%= product.item_name %>" class="tbl-thumb">
+                </td>
+                <td style="font-family: monospace; font-size: 0.85rem; color: var(--text-secondary);">
+                  <%= product.sku %>
+                </td>
+                <td style="font-weight: 600; color: var(--text-primary);">
+                  <%= product.item_name %>
+                </td>
+                <td style="color: var(--text-secondary); font-size: 0.9rem;">
+                  <%= product.type %>
+                </td>
+                <td style="color: var(--accent-primary); font-weight: 600;">
+                  <%= new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(product.price) %>
+                </td>
+                <td style="color: var(--text-secondary);">
+                  <%= product.weight %> g
+                </td>
+                <td style="font-weight: 600; color: <%= product.stock === 0 ? 'var(--danger)' : 'var(--text-primary)' %>;">
+                  <%= product.stock %>
+                </td>
+                <td>
+                  <% if (product.is_hidden) { %>
+                    <span style="display: inline-block; padding: 0.25rem 0.5rem; font-size: 0.75rem; font-weight: 600; border-radius: 4px; background-color: rgba(239, 68, 68, 0.15); color: #f87171;">Hidden</span>
+                  <% } else { %>
+                    <span style="display: inline-block; padding: 0.25rem 0.5rem; font-size: 0.75rem; font-weight: 600; border-radius: 4px; background-color: rgba(16, 185, 129, 0.15); color: #34d399;">Visible</span>
+                  <% } %>
+                </td>
+                <td>
+                  <div class="actions-cell">
+                    <a href="/ad-minpanel/products/edit/<%= product.id %>" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem;">Edit</a>
+                    
+                    <!-- Deletion Form triggers POST instead of GET to protect against simple click CSRF triggers -->
+                    <form action="/ad-minpanel/products/delete/<%= product.id %>" method="POST" onsubmit="return confirm('Are you sure you want to delete this product?');" style="display: inline;">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                      <button type="submit" class="btn btn-danger" style="padding: 0.5rem 1rem; font-size: 0.85rem;">Delete</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            <% }); %>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,285 @@
+<%- include('partials/header') %>
+
+<h1 style="font-size: 2rem; margin-bottom: 2rem;">Shopping Cart</h1>
+
+<% if (typeof error !== 'undefined' && error) { %>
+  <div class="alert alert-danger" style="margin-bottom: 1.5rem;">
+    <%= error %>
+  </div>
+<% } %>
+<% if (typeof success !== 'undefined' && success) { %>
+  <div class="alert alert-success" style="margin-bottom: 1.5rem;">
+    <%= success %>
+  </div>
+<% } %>
+
+
+<% if (cart.length === 0) { %>
+  <div class="empty-cart-container">
+    <div class="empty-cart-icon">🛒</div>
+    <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">Your Cart is Empty</h2>
+    <p style="color: var(--text-secondary); margin-bottom: 2rem;">Looks like you haven't added anything to your cart yet.</p>
+    <a href="/catalog" class="btn">Browse Products</a>
+  </div>
+<% } else { %>
+  <div class="cart-grid">
+    <div class="cart-items">
+      <% cart.forEach(function(item) { %>
+        <div class="cart-item" data-product-id="<%= item.id %>">
+          <img src="<%= item.image_url %>" alt="<%= item.item_name %>" class="cart-item-image">
+          
+          <div class="cart-item-details">
+            <h3 class="cart-item-name">
+              <a href="/catalog/<%= item.id %>"><%= item.item_name %></a>
+            </h3>
+            <div class="cart-item-meta">
+              Unit Weight: <%= item.weight %> g | Unit Price: 
+              <span class="cart-item-price">
+                <%= new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(item.price) %>
+              </span>
+            </div>
+          </div>
+          
+          <div class="cart-item-actions">
+            <!-- Quantity adjustment form -->
+            <div class="quantity-controls">
+              <form action="/cart/update" method="POST" class="form-inline">
+                <input type="hidden" name="productId" value="<%= item.id %>">
+                <input type="hidden" name="action" value="decrement">
+                <button type="submit" class="quantity-btn">−</button>
+              </form>
+              <input type="text" class="quantity-input" value="<%= item.quantity %>" readonly>
+              <form action="/cart/update" method="POST" class="form-inline">
+                <input type="hidden" name="productId" value="<%= item.id %>">
+                <input type="hidden" name="action" value="increment">
+                <button type="submit" class="quantity-btn">+</button>
+              </form>
+            </div>
+            
+            <!-- Remove item form -->
+            <form action="/cart/remove" method="POST">
+              <input type="hidden" name="productId" value="<%= item.id %>">
+              <button type="submit" class="btn-remove" title="Remove Item">🗑️</button>
+            </form>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+    
+    <div class="cart-summary">
+      <h3 class="summary-title">Order Summary</h3>
+      
+      <div class="summary-row">
+        <span>Subtotal Items</span>
+        <span id="summary-subtotal-items"><%= cart.reduce((sum, item) => sum + item.quantity, 0) %> items</span>
+      </div>
+      
+      <div class="summary-row">
+        <span>Total Weight</span>
+        <span id="summary-total-weight"><%= totalWeight %> grams</span>
+      </div>
+      
+      <div class="summary-row total">
+        <span>Total Price</span>
+        <span class="summary-total-price" id="summary-total-price">
+          <%= new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(totalPrice) %>
+        </span>
+      </div>
+      
+      <div class="summary-checkout-wrapper">
+        <a href="/checkout" class="btn btn-checkout-full">
+          Proceed to Checkout
+        </a>
+      </div>
+    </div>
+  </div>
+<% } %>
+
+<div id="toast-container"></div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const toastContainer = document.getElementById('toast-container');
+
+    function showToast(message, type = 'success') {
+      if (!toastContainer) return;
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      
+      const messageSpan = document.createElement('span');
+      messageSpan.className = 'toast-message';
+      messageSpan.textContent = message;
+      
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'toast-close';
+      closeBtn.innerHTML = '&times;';
+      closeBtn.onclick = () => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-20px)';
+        setTimeout(() => toast.remove(), 300);
+      };
+      
+      toast.appendChild(messageSpan);
+      toast.appendChild(closeBtn);
+      toastContainer.appendChild(toast);
+      
+      // Auto close after 4 seconds
+      setTimeout(() => {
+        if (toast.parentNode) {
+          toast.style.opacity = '0';
+          toast.style.transform = 'translateY(-20px)';
+          setTimeout(() => toast.remove(), 300);
+        }
+      }, 4000);
+    }
+
+    function updateCartBadge(count) {
+      const cartLink = document.querySelector('.cart-icon-container a');
+      if (!cartLink) return;
+      
+      let badge = cartLink.querySelector('.cart-badge');
+      if (count > 0) {
+        if (!badge) {
+          badge = document.createElement('span');
+          badge.className = 'cart-badge';
+          cartLink.appendChild(badge);
+        }
+        badge.textContent = count;
+      } else {
+        if (badge) {
+          badge.remove();
+        }
+      }
+    }
+
+    function renderEmptyCart() {
+      const container = document.querySelector('.cart-grid') || document.querySelector('.empty-cart-container');
+      if (!container) return;
+      
+      const parent = container.parentNode;
+      parent.innerHTML = `
+        <h1 style="font-size: 2rem; margin-bottom: 2rem;">Shopping Cart</h1>
+        <div class="empty-cart-container">
+          <div class="empty-cart-icon">🛒</div>
+          <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">Your Cart is Empty</h2>
+          <p style="color: var(--text-secondary); margin-bottom: 2rem;">Looks like you haven't added anything to your cart yet.</p>
+          <a href="/catalog" class="btn">Browse Products</a>
+        </div>
+      `;
+    }
+
+    function updateCartDOM(data) {
+      const itemsContainer = document.querySelector('.cart-items');
+      if (!itemsContainer) {
+        window.location.reload();
+        return;
+      }
+      
+      // Remove any items that are no longer in the cart session
+      const existingItems = itemsContainer.querySelectorAll('.cart-item');
+      existingItems.forEach(itemEl => {
+        const pId = parseInt(itemEl.getAttribute('data-product-id'), 10);
+        const exists = data.cart.some(item => item.id === pId);
+        if (!exists) {
+          itemEl.remove();
+        }
+      });
+      
+      // Update quantities of existing items
+      data.cart.forEach(item => {
+        const itemEl = itemsContainer.querySelector(`.cart-item[data-product-id="${item.id}"]`);
+        if (itemEl) {
+          const qtyInput = itemEl.querySelector('.quantity-input');
+          if (qtyInput) {
+            qtyInput.value = item.quantity;
+          }
+        } else {
+          window.location.reload();
+        }
+      });
+      
+      // Update summary fields
+      const summarySubtotal = document.getElementById('summary-subtotal-items');
+      if (summarySubtotal) {
+        const totalItems = data.cart.reduce((sum, item) => sum + item.quantity, 0);
+        summarySubtotal.textContent = `${totalItems} items`;
+      }
+      
+      const summaryWeight = document.getElementById('summary-total-weight');
+      if (summaryWeight) {
+        summaryWeight.textContent = `${data.totalWeight} grams`;
+      }
+      
+      const summaryPrice = document.getElementById('summary-total-price');
+      if (summaryPrice) {
+        const formattedPrice = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(data.totalPrice);
+        summaryPrice.textContent = formattedPrice;
+      }
+    }
+
+    document.addEventListener('submit', async (e) => {
+      const form = e.target;
+      const action = form.getAttribute('action');
+      
+      if (!action || (!action.startsWith('/cart/add') && !action.startsWith('/cart/update') && !action.startsWith('/cart/remove'))) {
+        return;
+      }
+      
+      e.preventDefault();
+      
+      // Clear static alert boxes on submit
+      const staticAlerts = document.querySelectorAll('.alert');
+      staticAlerts.forEach(alert => alert.remove());
+
+      const formData = new FormData(form);
+      const urlParams = new URLSearchParams(formData);
+      
+      try {
+        const response = await fetch(action, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: urlParams.toString()
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          showToast(data.error || 'An error occurred.', 'error');
+          return;
+        }
+        
+        // Show success message if any
+        if (data.message) {
+          showToast(data.message, 'success');
+        } else if (action.includes('update')) {
+          showToast('Cart updated.', 'success');
+        } else if (action.includes('remove')) {
+          showToast('Item removed from cart.', 'success');
+        }
+        
+        // Update header badge
+        updateCartBadge(data.cartCount);
+        
+        // If cart is empty now, show empty view
+        if (!data.cart || data.cart.length === 0) {
+          renderEmptyCart();
+          return;
+        }
+        
+        // Update quantities and totals dynamically
+        updateCartDOM(data);
+        
+        
+      } catch (err) {
+        console.error(err);
+        showToast('A network error occurred.', 'error');
+      }
+    });
+  });
+</script>
+
+<%- include('partials/footer') %>

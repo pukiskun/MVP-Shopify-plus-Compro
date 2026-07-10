@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= typeof title !== 'undefined' ? title + ' | MVP Shopify' : 'MVP Shopify' %></title>
+  <meta name="description" content="Secure and fast e-commerce platform featuring catalog, shopping cart, and payment gateway integration.">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <header>
+    <div class="nav-container">
+      <div class="logo">
+        <a href="/"><span>✦</span> MVP Shopify</a>
+      </div>
+      
+      <!-- Mobile hamburger navigation button (enforces 44px x 44px target) -->
+      <button class="nav-toggle-btn" aria-label="Toggle navigation menu" id="nav-toggle">
+        <span class="bar"></span>
+        <span class="bar"></span>
+        <span class="bar"></span>
+      </button>
+
+      <nav id="nav-menu">
+        <ul>
+          <li><a href="/" class="<%= typeof activePage !== 'undefined' && activePage === 'home' ? 'active' : '' %>">Home</a></li>
+          <li><a href="/catalog" class="<%= typeof activePage !== 'undefined' && activePage === 'catalog' ? 'active' : '' %>">Catalog</a></li>
+          <li><a href="/contact" class="<%= typeof activePage !== 'undefined' && activePage === 'contact' ? 'active' : '' %>">Contact</a></li>
+          <li><a href="/about" class="<%= typeof activePage !== 'undefined' && activePage === 'about' ? 'active' : '' %>">About Us</a></li>
+          <% if (typeof customerId !== 'undefined' && customerId) { %>
+            <li class="nav-dropdown">
+              <a href="#" class="nav-dropdown-toggle" onclick="event.preventDefault();">Hello, <%= customerName %> <span>▼</span></a>
+              <ul class="nav-dropdown-menu">
+                <li class="cart-icon-container">
+                  <a href="/cart" class="<%= typeof activePage !== 'undefined' && activePage === 'cart' ? 'active' : '' %>">
+                    Cart
+                    <% if (typeof cartCount !== 'undefined' && cartCount > 0) { %>
+                      <span class="cart-badge"><%= cartCount %></span>
+                    <% } %>
+                  </a>
+                </li>
+                <li><a href="/orders" class="<%= typeof activePage !== 'undefined' && activePage === 'orders' ? 'active' : '' %>">My Orders</a></li>
+                <li class="dropdown-divider"></li>
+                <li>
+                  <form action="/logout" method="POST" style="display: block; width: 100%;">
+                    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+                    <button type="submit" class="dropdown-logout-btn">Logout</button>
+                  </form>
+                </li>
+              </ul>
+            </li>
+          <% } else { %>
+            <li><a href="/login" class="<%= typeof activePage !== 'undefined' && (activePage === 'login' || activePage === 'register') ? 'active' : '' %>">Login / Register</a></li>
+            <li class="cart-icon-container">
+              <a href="/cart" class="<%= typeof activePage !== 'undefined' && activePage === 'cart' ? 'active' : '' %>">
+                Cart
+                <% if (typeof cartCount !== 'undefined' && cartCount > 0) { %>
+                  <span class="cart-badge"><%= cartCount %></span>
+                <% } %>
+              </a>
+            </li>
+          <% } %>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const toggleBtn = document.getElementById('nav-toggle');
+      const navMenu = document.getElementById('nav-menu');
+      
+      if (toggleBtn && navMenu) {
+        toggleBtn.addEventListener('click', () => {
+          navMenu.classList.toggle('active');
+          toggleBtn.classList.toggle('active');
+        });
+      }
+    });
+  </script>
+  <main>

@@ -1,0 +1,92 @@
+<%- include('partials/header') %>
+
+<div style="margin-bottom: 2rem;">
+  <a href="/cart" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 0.5rem; transition: var(--transition-fast);">
+    ← Back to Shopping Cart
+  </a>
+</div>
+
+<h1 style="font-size: 2rem; margin-bottom: 2rem;">Secure Checkout</h1>
+
+<div class="cart-grid">
+  <div class="contact-form-card">
+    <h3 style="margin-bottom: 1.5rem;">Shipping Details</h3>
+    
+    <% if (errors && errors.length > 0) { %>
+      <div class="alert alert-danger" style="margin-bottom: 1.5rem;">
+        <strong style="display: block; margin-bottom: 0.25rem;">Form validation failed:</strong>
+        <ul style="list-style: inside square; padding-left: 0.5rem;">
+          <% errors.forEach(function(err) { %>
+            <li><%= err %></li>
+          <% }); %>
+        </ul>
+      </div>
+    <% } %>
+
+    <form action="/checkout" method="POST" novalidate>
+      <div class="form-group">
+        <label for="name" class="form-label">Full Name *</label>
+        <input type="text" id="name" name="name" class="form-input" placeholder="John Doe" value="<%= formData.name || '' %>" required maxlength="100">
+      </div>
+
+      <div class="form-row-2col">
+        <div class="form-group">
+          <label for="email" class="form-label">Email Address *</label>
+          <input type="email" id="email" name="email" class="form-input" placeholder="john@example.com" value="<%= formData.email || '' %>" required>
+        </div>
+
+        <div class="form-group">
+          <label for="phone" class="form-label">Phone Number *</label>
+          <input type="tel" id="phone" name="phone" class="form-input" placeholder="e.g. 08123456789" value="<%= formData.phone || '' %>" required maxlength="15">
+          <span style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-top: 0.25rem;">Digits only (10 to 15 numbers).</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="address" class="form-label">Shipping Address *</label>
+        <textarea id="address" name="address" class="form-input form-textarea-address" placeholder="Enter your full shipping address..." required maxlength="500"><%= formData.address || '' %></textarea>
+      </div>
+
+      <button type="submit" class="btn" style="width: 100%; font-size: 1.05rem; margin-top: 1.5rem;">
+        Place Order & Pay
+      </button>
+    </form>
+  </div>
+
+  <div class="cart-summary">
+    <h3 class="summary-title">Order Summary</h3>
+    
+    <div style="max-height: 250px; overflow-y: auto; margin-bottom: 1.5rem; padding-right: 0.5rem;">
+      <% cart.forEach(function(item) { %>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid var(--border-color);">
+          <div>
+            <div style="font-weight: 600; font-size: 0.95rem;"><%= item.item_name %></div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Qty: <%= item.quantity %> | Weight: <%= item.weight * item.quantity %>g</div>
+          </div>
+          <span style="font-weight: 600; color: var(--accent-primary); font-size: 0.95rem;">
+            <%= new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(item.price * item.quantity) %>
+          </span>
+        </div>
+      <% }); %>
+    </div>
+    
+    <div class="summary-row">
+      <span>Total Items</span>
+      <span><%= cart.reduce((sum, item) => sum + item.quantity, 0) %> items</span>
+    </div>
+    
+    <div class="summary-row">
+      <span>Total Weight</span>
+      <span><%= totalWeight %> grams</span>
+    </div>
+    
+    <div class="summary-row total">
+      <span>Grand Total</span>
+      <span class="summary-total-price">
+        <%= new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(totalPrice) %>
+      </span>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>
