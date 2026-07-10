@@ -240,12 +240,14 @@ async function setup() {
     console.log('PostgreSQL Database initialization and migrations completed successfully.');
   } catch (error) {
     console.error('Error setting up the PostgreSQL database:', error);
-    process.exit(1);
-  } finally {
-    await db.pool.end();
+    throw error;
   }
 }
 
+module.exports = { setup };
+
 if (require.main === module) {
-  setup();
+  setup()
+    .then(() => { console.log('Setup complete.'); process.exit(0); })
+    .catch(() => { process.exit(1); });
 }

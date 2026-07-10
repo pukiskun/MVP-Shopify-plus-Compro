@@ -96,16 +96,23 @@ app.use((err, req, res, next) => {
 
 // Start Server
 if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`==================================================`);
-    console.log(` MVP Shopify Application is running!`);
-    console.log(` Local Server: http://localhost:${PORT}`);
-    console.log(` Environment:  ${process.env.NODE_ENV || 'development'}`);
-    console.log(`==================================================`);
-  });
+  const { setup } = require('./config/db-setup');
 
-  // Start background job to clean abandoned checkouts every 60 seconds
-  setInterval(cleanAbandonedCheckouts, 60000);
+  setup().then(() => {
+    app.listen(PORT, () => {
+      console.log(`==================================================`);
+      console.log(` MVP Shopify Application is running!`);
+      console.log(` Local Server: http://localhost:${PORT}`);
+      console.log(` Environment:  ${process.env.NODE_ENV || 'development'}`);
+      console.log(`==================================================`);
+    });
+
+    // Start background job to clean abandoned checkouts every 60 seconds
+    setInterval(cleanAbandonedCheckouts, 60000);
+  }).catch((err) => {
+    console.error('Failed to initialize database:', err);
+    process.exit(1);
+  });
 }
 
 module.exports = app;
