@@ -108,7 +108,7 @@ router.post('/cart/add', [
     if (req.xhr || (req.headers.accept && req.headers.accept.includes('json'))) {
       return res.json({ success: true, cartCount: getCartCount(req) });
     }
-    res.redirect('/cart');
+    req.session.save(() => res.redirect('/cart'));
   } catch (error) {
     console.error('[Error] Failed to add item to cart:', error);
     if (req.xhr || (req.headers.accept && req.headers.accept.includes('json'))) {
@@ -211,7 +211,7 @@ router.post('/cart/add-by-sku', [
         message: `Added "${product.item_name}" to cart.`
       });
     }
-    res.redirect('/cart?success=' + encodeURIComponent(`Added "${product.item_name}" to cart.`));
+    req.session.save(() => res.redirect('/cart?success=' + encodeURIComponent(`Added "${product.item_name}" to cart.`)));
   } catch (error) {
     console.error('[Error] Add by SKU failed:', error);
     const errorMsg = 'Failed to add product by SKU.';
@@ -295,7 +295,7 @@ router.post('/cart/update', [
       totalWeight
     });
   }
-  res.redirect('/cart');
+  req.session.save(() => res.redirect('/cart'));
 });
 
 // Remove Item from Cart
@@ -340,7 +340,7 @@ router.post('/cart/remove', [
       totalWeight
     });
   }
-  res.redirect('/cart');
+  req.session.save(() => res.redirect('/cart'));
 });
 
 module.exports = router;

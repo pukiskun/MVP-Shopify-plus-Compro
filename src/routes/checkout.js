@@ -183,7 +183,7 @@ router.post('/checkout', [
     req.session.myOrders.push(orderUuid);
 
     // Redirect to simulated payment page
-    res.redirect(`/checkout/pay/${orderUuid}`);
+    req.session.save(() => res.redirect(`/checkout/pay/${orderUuid}`));
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('[Transaction Failed] Rollback executed:', error.message);

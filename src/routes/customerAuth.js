@@ -112,7 +112,7 @@ router.post('/login', [
         req.session.myOrders = oldMyOrders;
         
         const targetRedirect = isSafeRedirect(redirect) ? redirect : '/';
-        return res.redirect(targetRedirect);
+        req.session.save(() => res.redirect(targetRedirect));
       });
     } else {
       return res.render('login', {
@@ -230,7 +230,7 @@ router.post('/register', [
       req.session.myOrders = oldMyOrders;
 
       const targetRedirect = isSafeRedirect(redirect) ? redirect : '/';
-      return res.redirect(targetRedirect);
+      req.session.save(() => res.redirect(targetRedirect));
     });
 
   } catch (error) {
