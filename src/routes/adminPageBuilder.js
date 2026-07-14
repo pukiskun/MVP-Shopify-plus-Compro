@@ -8,6 +8,27 @@ const router = express.Router();
 // Apply administrator authentication middleware to all routes in this router
 router.use('/ad-minpanel/page-builder', requireAdmin);
 
+// GET: Render the page builder management dashboard view
+router.get('/ad-minpanel/page-builder', async (req, res) => {
+  try {
+    const blocksResult = await db.query('SELECT * FROM homepage_blocks ORDER BY sort_order ASC');
+    const groupsResult = await db.query('SELECT * FROM banner_groups ORDER BY id ASC');
+    const productsResult = await db.query('SELECT sku, item_name FROM products WHERE is_hidden = 0 ORDER BY item_name ASC');
+
+    res.render('admin/page-builder', {
+      title: 'Homepage Page Builder',
+      blocks: blocksResult.rows,
+      bannerGroups: groupsResult.rows,
+      products: productsResult.rows,
+      error: req.query.error || null,
+      success: req.query.success || null
+    });
+  } catch (error) {
+    console.error('Failed to load page builder admin panel:', error);
+    res.status(500).send('Failed to load page builder admin panel.');
+  }
+});
+
 // GET: Retrieve all homepage blocks
 router.get('/ad-minpanel/page-builder/blocks', async (req, res) => {
   try {

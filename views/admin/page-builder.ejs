@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> | Admin Panel</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    .admin-header-nav {
+      background-color: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .admin-brand {
+      font-weight: 700;
+      color: var(--text-primary);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .admin-brand span {
+      color: var(--accent-primary);
+    }
+    .admin-container {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 2rem;
+    }
+    .dashboard-actions-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+    .card-form {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 2rem;
+      margin-top: 3rem;
+    }
+    .form-group {
+      margin-bottom: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .form-group label {
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+    .form-control {
+      background-color: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-sans);
+      font-size: 0.95rem;
+      width: 100%;
+      transition: var(--transition-fast);
+    }
+    .form-control:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 1px var(--accent-primary);
+    }
+    .alert {
+      padding: 1rem 1.25rem;
+      border-radius: var(--radius-sm);
+      margin-bottom: 1.5rem;
+      font-size: 0.95rem;
+    }
+    .alert-error {
+      background-color: rgba(239, 68, 68, 0.15);
+      border: 1px solid var(--danger);
+      color: #fca5a5;
+    }
+    .alert-success {
+      background-color: rgba(16, 185, 129, 0.15);
+      border: 1px solid var(--accent-primary);
+      color: #a7f3d0;
+    }
+    .order-btns {
+      display: flex;
+      gap: 0.25rem;
+    }
+    .btn-order {
+      background: none;
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      cursor: pointer;
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition-fast);
+    }
+    .btn-order:hover {
+      border-color: var(--accent-primary);
+      color: var(--accent-primary);
+      background-color: var(--bg-primary);
+    }
+    
+    /* Grid & Rows Styling */
+    .visual-row {
+      border: 1px dashed var(--border-color);
+      border-radius: var(--radius-md);
+      margin-bottom: 2rem;
+      background-color: rgba(15, 23, 42, 0.2);
+      overflow: hidden;
+    }
+    .visual-row-header {
+      background-color: rgba(15, 23, 42, 0.4);
+      padding: 0.5rem 1rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border-color);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .visual-row-body {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      padding: 1rem;
+    }
+    .visual-block-card {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 150px;
+    }
+    .block-width-1 {
+      grid-column: span 1;
+    }
+    .block-width-2 {
+      grid-column: span 2;
+    }
+    .block-width-3 {
+      grid-column: span 3;
+    }
+    .block-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+    .block-type-badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--accent-primary);
+      background-color: rgba(16, 185, 129, 0.1);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+    }
+    .block-size-badge {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      background-color: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+    }
+    .block-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem 0;
+      color: var(--text-primary);
+    }
+    .block-content {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      margin: 0;
+      line-height: 1.4;
+    }
+    .block-meta {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+    .block-meta code {
+      background-color: var(--bg-primary);
+      padding: 0.15rem 0.35rem;
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+      font-family: monospace;
+      color: var(--accent-primary);
+    }
+    .block-card-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 1.25rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border-color);
+    }
+  </style>
+</head>
+<body style="background-color: var(--bg-primary); color: var(--text-primary); font-family: var(--font-sans);">
+
+  <header class="admin-header-nav">
+    <a href="/ad-minpanel/products" class="admin-brand">
+      <span>✦</span> MVP Shopify Admin Panel
+    </a>
+    <div style="display: flex; gap: 1.5rem; align-items: center;">
+      <a href="/ad-minpanel/products" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95rem;">Catalog Dashboard</a>
+      <a href="/ad-minpanel/inventory" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95rem;">Inventory</a>
+      <a href="/ad-minpanel/orders" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95rem;">Order History</a>
+      <a href="/ad-minpanel/banners" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95rem;">Banners</a>
+      <a href="/ad-minpanel/page-builder" style="color: var(--text-primary); text-decoration: none; font-size: 0.95rem; font-weight: 600;">Page Builder</a>
+      <a href="/ad-minpanel/logs" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95rem;">Audit Logs</a>
+      <a href="/ad-minpanel/logout" class="btn btn-secondary" style="padding: 0.5rem 1.25rem; font-size: 0.85rem;">Sign Out</a>
+    </div>
+  </header>
+
+  <div class="admin-container">
+    <div class="dashboard-actions-header">
+      <div>
+        <h2 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 0.25rem;">Homepage Page Builder</h2>
+        <p style="color: var(--text-secondary); font-size: 0.95rem;">Design the storefront layout by organizing rows of content, catalog cards, titles, and carousels</p>
+      </div>
+    </div>
+
+    <% if (error) { %>
+      <div class="alert alert-error"><%= error %></div>
+    <% } %>
+    <% if (success) { %>
+      <div class="alert alert-success"><%= success %></div>
+    <% } %>
+
+    <h3 style="margin-bottom: 1rem; font-size: 1.25rem; font-weight: 600;">Active Layout Grid</h3>
+    
+    <div class="block-rows-container">
+      <% if (blocks.length === 0) { %>
+        <div style="text-align: center; color: var(--text-secondary); padding: 4rem; border: 1px dashed var(--border-color); border-radius: var(--radius-md); background-color: var(--bg-secondary);">
+          No homepage blocks defined yet. Use the form below to create your first content block.
+        </div>
+      <% } else { %>
+        <% 
+          let rows = [];
+          let currentRow = [];
+          let currentRowWidth = 0;
+          for (let block of blocks) {
+            if (currentRowWidth + block.width > 3) {
+              rows.push(currentRow);
+              currentRow = [];
+              currentRowWidth = 0;
+            }
+            currentRow.push(block);
+            currentRowWidth += block.width;
+          }
+          if (currentRow.length > 0) {
+            rows.push(currentRow);
+          }
+        %>
+        <% rows.forEach((row, rowIndex) => { %>
+          <div class="visual-row">
+            <div class="visual-row-header">Row <%= rowIndex + 1 %> (Width sum: <%= row.reduce((sum, b) => sum + b.width, 0) %>/3)</div>
+            <div class="visual-row-body">
+              <% row.forEach((block, blockIndex) => { %>
+                <div class="visual-block-card block-width-<%= block.width %>">
+                  <div>
+                    <div class="block-card-header">
+                      <span class="block-type-badge"><%= block.type.replace('_', ' ') %></span>
+                      <span class="block-size-badge"><%= block.width %>x<%= block.height %></span>
+                    </div>
+                    
+                    <div class="block-card-body">
+                      <% if (block.title) { %>
+                        <h4 class="block-title"><%= block.title %></h4>
+                      <% } %>
+                      
+                      <% if (block.type === 'info_card') { %>
+                        <p class="block-content">
+                          <% if (block.icon) { %>
+                            <span style="font-size: 1.2rem; margin-right: 0.25rem;"><%= block.icon %></span>
+                          <% } %>
+                          <%= block.content %>
+                        </p>
+                      <% } else if (block.type === 'catalog_card') { %>
+                        <p class="block-meta">Product SKU: <code><%= block.product_sku %></code></p>
+                      <% } else if (block.type === 'title_link') { %>
+                        <p class="block-meta">Link Destination: <a href="<%= block.link_url %>" target="_blank" style="color: var(--accent-primary); text-decoration: none;"><%= block.link_url %></a></p>
+                      <% } else if (block.type === 'banner_group') { %>
+                        <% const matchingGroup = bannerGroups.find(g => g.id === block.banner_group_id); %>
+                        <p class="block-meta">Banner Group: <code><%= matchingGroup ? matchingGroup.group_name : 'ID ' + block.banner_group_id %></code></p>
+                      <% } %>
+                    </div>
+                  </div>
+
+                  <div class="block-card-actions">
+                    <div class="order-btns">
+                      <button type="button" class="btn-order" onclick="moveBlock(<%= block.id %>, 'up')" title="Move Up" <%= blockIndex === 0 && rowIndex === 0 ? 'disabled style="opacity: 0.3; cursor: not-allowed;"' : '' %>>▲</button>
+                      <button type="button" class="btn-order" onclick="moveBlock(<%= block.id %>, 'down')" title="Move Down" <%= blockIndex === row.length - 1 && rowIndex === rows.length - 1 ? 'disabled style="opacity: 0.3; cursor: not-allowed;"' : '' %>>▼</button>
+                    </div>
+                    <button type="button" class="btn btn-danger" style="padding: 0.35rem 0.75rem; font-size: 0.8rem; min-height: unset; height: 32px;" onclick="deleteBlock(<%= block.id %>)">Delete Block</button>
+                  </div>
+                </div>
+              <% }) %>
+            </div>
+          </div>
+        <% }) %>
+      <% } %>
+    </div>
+
+    <!-- Create Block Form -->
+    <div class="card-form">
+      <h3 style="margin-bottom: 1.5rem; font-size: 1.25rem; font-weight: 700;">Add New Homepage Layout Block</h3>
+      
+      <form id="createBlockForm" onsubmit="submitCreateBlock(event)">
+        <div class="form-group">
+          <label for="type">Block Type *</label>
+          <select id="type" name="type" class="form-control" onchange="handleTypeChange()" required>
+            <option value="info_card">Info Card (1x1)</option>
+            <option value="catalog_card">Product Catalog Card (1x1)</option>
+            <option value="title">Static Section Title (3x1)</option>
+            <option value="title_link">Title with Catalog Link (2x1 or 3x1)</option>
+            <option value="banner_group">Banner Carousel Slide (3x1)</option>
+          </select>
+        </div>
+
+        <div id="group-title" class="form-group">
+          <label for="title">Block Title / Header Text</label>
+          <input type="text" id="title" name="title" class="form-control" placeholder="Enter header title text">
+        </div>
+
+        <div id="group-content" class="form-group">
+          <label for="content">Body Description Content</label>
+          <textarea id="content" name="content" class="form-control" placeholder="Enter card body content details..." style="min-height: 80px;"></textarea>
+        </div>
+
+        <div id="group-icon" class="form-group">
+          <label for="icon">Display Icon / Emoji</label>
+          <input type="text" id="icon" name="icon" class="form-control" placeholder="e.g. ✦ or 📦 or 🚚">
+        </div>
+
+        <div id="group-sku" class="form-group" style="display: none;">
+          <label for="product_sku">Select Showcase Product SKU *</label>
+          <select id="product_sku" name="product_sku" class="form-control">
+            <option value="">-- Choose a Product --</option>
+            <% products.forEach(p => { %>
+              <option value="<%= p.sku %>"><%= p.sku %> - <%= p.item_name %></option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div id="group-link" class="form-group" style="display: none;">
+          <label for="link_url">Target Redirect Link URL</label>
+          <input type="text" id="link_url" name="link_url" class="form-control" placeholder="e.g. /catalog or /catalog?type=Electronics">
+        </div>
+
+        <div id="group-banner-group" class="form-group" style="display: none;">
+          <label for="banner_group_id">Select Banner Carousel Group *</label>
+          <select id="banner_group_id" name="banner_group_id" class="form-control">
+            <option value="">-- Choose a Banner Group --</option>
+            <% bannerGroups.forEach(g => { %>
+              <option value="<%= g.id %>"><%= g.group_name %> (<%= g.target_width %>x<%= g.target_height %>)</option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+          <div class="form-group">
+            <label for="width">Grid Column Width Span *</label>
+            <select id="width" name="width" class="form-control" required>
+              <option value="1">1 Column Span</option>
+              <option value="2">2 Columns Span</option>
+              <option value="3">3 Columns Span (Full Width)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="height">Grid Row Height Span *</label>
+            <input type="number" id="height" name="height" class="form-control" value="1" readonly>
+            <span style="font-size: 0.8rem; color: var(--text-secondary);">Row height is locked to 1 row according to layouts specs.</span>
+          </div>
+        </div>
+
+        <button type="submit" class="btn" style="width: 100%; margin-top: 1.5rem; font-size: 1rem;">Add Block to Grid Layout</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const csrfToken = "<%= csrfToken %>";
+
+    function handleTypeChange() {
+      const type = document.getElementById('type').value;
+      const groupTitle = document.getElementById('group-title');
+      const groupContent = document.getElementById('group-content');
+      const groupIcon = document.getElementById('group-icon');
+      const groupSku = document.getElementById('group-sku');
+      const groupLink = document.getElementById('group-link');
+      const groupBannerGroup = document.getElementById('group-banner-group');
+      
+      const widthSelect = document.getElementById('width');
+      
+      // Reset visibility
+      groupTitle.style.display = 'none';
+      groupContent.style.display = 'none';
+      groupIcon.style.display = 'none';
+      groupSku.style.display = 'none';
+      groupLink.style.display = 'none';
+      groupBannerGroup.style.display = 'none';
+      
+      // Enable all options first
+      Array.from(widthSelect.options).forEach(opt => opt.disabled = false);
+      
+      if (type === 'info_card') {
+        groupTitle.style.display = 'flex';
+        groupContent.style.display = 'flex';
+        groupIcon.style.display = 'flex';
+        widthSelect.value = '1';
+        Array.from(widthSelect.options).forEach(opt => {
+          if (opt.value !== '1') opt.disabled = true;
+        });
+      } else if (type === 'catalog_card') {
+        groupSku.style.display = 'flex';
+        widthSelect.value = '1';
+        Array.from(widthSelect.options).forEach(opt => {
+          if (opt.value !== '1') opt.disabled = true;
+        });
+      } else if (type === 'title') {
+        groupTitle.style.display = 'flex';
+        widthSelect.value = '3';
+        Array.from(widthSelect.options).forEach(opt => {
+          if (opt.value !== '3') opt.disabled = true;
+        });
+      } else if (type === 'title_link') {
+        groupTitle.style.display = 'flex';
+        groupLink.style.display = 'flex';
+        widthSelect.value = '2';
+        Array.from(widthSelect.options).forEach(opt => {
+          if (opt.value !== '2' && opt.value !== '3') opt.disabled = true;
+        });
+      } else if (type === 'banner_group') {
+        groupBannerGroup.style.display = 'flex';
+        widthSelect.value = '3';
+        Array.from(widthSelect.options).forEach(opt => {
+          if (opt.value !== '3') opt.disabled = true;
+        });
+      }
+    }
+
+    async function submitCreateBlock(event) {
+      event.preventDefault();
+      const form = event.target;
+      
+      const type = document.getElementById('type').value;
+      const title = document.getElementById('title').value;
+      const content = document.getElementById('content').value;
+      const icon = document.getElementById('icon').value;
+      const product_sku = document.getElementById('product_sku').value;
+      const link_url = document.getElementById('link_url').value;
+      const banner_group_id = document.getElementById('banner_group_id').value;
+      const width = document.getElementById('width').value;
+      const height = document.getElementById('height').value;
+
+      const data = {
+        type,
+        title,
+        content,
+        icon,
+        product_sku,
+        link_url,
+        banner_group_id,
+        width,
+        height,
+        _csrf: csrfToken
+      };
+      
+      try {
+        const res = await fetch('/ad-minpanel/page-builder/blocks/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-csrf-token': csrfToken
+          },
+          body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        if (result.success) {
+          window.location.reload();
+        } else {
+          alert('Error: ' + (result.error || 'Failed to create block'));
+        }
+      } catch (err) {
+        console.error(err);
+        alert('An unexpected error occurred.');
+      }
+    }
+
+    async function deleteBlock(blockId) {
+      if (!confirm('Are you sure you want to delete this homepage block?')) return;
+      try {
+        const res = await fetch(`/ad-minpanel/page-builder/blocks/${blockId}/delete`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-csrf-token': csrfToken
+          },
+          body: JSON.stringify({ _csrf: csrfToken })
+        });
+        const result = await res.json();
+        if (result.success) {
+          window.location.reload();
+        } else {
+          alert('Error: ' + (result.error || 'Failed to delete block'));
+        }
+      } catch (err) {
+        console.error(err);
+        alert('An unexpected error occurred.');
+      }
+    }
+
+    async function moveBlock(blockId, direction) {
+      try {
+        const res = await fetch(`/ad-minpanel/page-builder/blocks/${blockId}/${direction}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-csrf-token': csrfToken
+          },
+          body: JSON.stringify({ _csrf: csrfToken })
+        });
+        const result = await res.json();
+        if (result.success) {
+          window.location.reload();
+        } else {
+          alert('Error: ' + (result.error || `Failed to move block ${direction}`));
+        }
+      } catch (err) {
+        console.error(err);
+        alert('An unexpected error occurred.');
+      }
+    }
+
+    // Initialize visibility on load
+    document.addEventListener('DOMContentLoaded', () => {
+      handleTypeChange();
+    });
+  </script>
+</body>
+</html>

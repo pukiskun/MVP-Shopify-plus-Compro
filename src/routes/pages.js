@@ -14,20 +14,37 @@ const getCartCount = (req) => {
 // Home page
 router.get('/', async (req, res) => {
   try {
+    const query = `
+      SELECT hb.*, p.item_name, p.price, p.image_url as product_image_url, p.id as product_id
+      FROM homepage_blocks hb
+      LEFT JOIN products p ON hb.product_sku = p.sku
+      ORDER BY hb.sort_order ASC
+    `;
+    const blocksResult = await db.query(query);
+    const blocks = blocksResult.rows;
+
     const bannersResult = await db.query('SELECT * FROM banners ORDER BY sort_order ASC');
+    const allBanners = bannersResult.rows;
+
+    for (let block of blocks) {
+      if (block.type === 'banner_group' && block.banner_group_id) {
+        block.banners = allBanners.filter(b => b.group_id === block.banner_group_id);
+      }
+    }
+
     res.render('home', {
       title: 'E-Commerce Company Profile',
       activePage: 'home',
       cartCount: getCartCount(req),
-      banners: bannersResult.rows
+      blocks: blocks
     });
   } catch (error) {
-    console.error('Failed to load home page banners:', error);
+    console.error('Failed to load home page blocks:', error);
     res.render('home', {
       title: 'E-Commerce Company Profile',
       activePage: 'home',
       cartCount: getCartCount(req),
-      banners: []
+      blocks: []
     });
   }
 });

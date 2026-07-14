@@ -1,282 +1,533 @@
 <%- include('partials/header') %>
 
-<% if (typeof banners !== 'undefined' && banners.length > 0) { %>
-  <div class="carousel-container">
-    <div class="carousel-slides">
-      <% banners.forEach((banner, index) => { %>
-        <div class="carousel-slide <%= index === 0 ? 'active' : '' %>">
-          <% if (banner.link_url) { %>
-            <a href="<%= banner.link_url %>">
-              <img src="<%= banner.image_url %>" alt="<%= banner.title %>">
-              <div class="carousel-caption">
-                <h2><%= banner.title %></h2>
-              </div>
+<div class="storefront-grid">
+  <% if (blocks.length === 0) { %>
+    <div class="hero block-span-3">
+      <h1>Your Next-Gen E-Commerce Experience</h1>
+      <p>Discover hand-picked premium lifestyle goods built with simplicity, reliability, and security in mind.</p>
+      <a href="/catalog" class="btn">Explore Product Catalog</a>
+    </div>
+    
+    <div class="block-span-3 block-title-static">
+      <h2>Why Shop With Us?</h2>
+    </div>
+    
+    <div class="block-span-1 block-info-card">
+      <div class="info-card-icon">✦</div>
+      <h3>Curated Premium Selection</h3>
+      <p>We source only high-quality items designed to elevate your everyday routines and spaces.</p>
+    </div>
+    <div class="block-span-1 block-info-card">
+      <div class="info-card-icon">⚡</div>
+      <h3>Swift Automated Shipping</h3>
+      <p>Integrated directly with J&T API to calculate the most accurate, secure, and cost-effective shipping rates instantly.</p>
+    </div>
+    <div class="block-span-1 block-info-card">
+      <div class="info-card-icon">🛡️</div>
+      <h3>Secure Payments</h3>
+      <p>Powered by Xendit's secure payment gateway. End-to-end encryption ensures your payment data never touches our local servers.</p>
+    </div>
+  <% } else { %>
+    <% blocks.forEach(block => { %>
+      
+      <% if (block.type === 'title') { %>
+        <div class="block-span-3 block-title-static">
+          <h2><%= block.title %></h2>
+        </div>
+      <% } %>
+      
+      <% if (block.type === 'title_link') { %>
+        <div class="block-span-<%= block.width %> block-title-link-container">
+          <h2><%= block.title %></h2>
+          <% if (block.link_url) { %>
+            <a href="<%= block.link_url %>" class="title-link-anchor">View All &rarr;</a>
+          <% } %>
+        </div>
+      <% } %>
+      
+      <% if (block.type === 'info_card') { %>
+        <div class="block-span-<%= block.width %> block-info-card">
+          <% if (block.icon) { %>
+            <div class="info-card-icon"><%= block.icon %></div>
+          <% } %>
+          <h3><%= block.title %></h3>
+          <p><%= block.content %></p>
+        </div>
+      <% } %>
+      
+      <% if (block.type === 'catalog_card') { %>
+        <div class="block-span-<%= block.width %> storefront-product-card">
+          <% if (block.product_id && block.item_name) { %>
+            <a href="/catalog/<%= block.product_id %>" class="sf-product-image-link">
+              <img src="<%= block.product_image_url || 'https://via.placeholder.com/800x800/2d3748/ffffff?text=No+Image' %>" alt="<%= block.item_name %>" class="sf-product-image" loading="lazy">
             </a>
+            <div class="sf-product-info">
+              <h3 class="sf-product-name">
+                <a href="/catalog/<%= block.product_id %>"><%= block.item_name %></a>
+              </h3>
+              <div class="sf-product-meta">
+                <span class="sf-product-price">
+                  <%= new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(block.price) %>
+                </span>
+              </div>
+              <a href="/catalog/<%= block.product_id %>" class="btn btn-secondary" style="width: 100%; margin-top: auto; font-size: 0.85rem; padding: 0.5rem 1rem; min-height: unset; height: 36px;">
+                Buy Now
+              </a>
+            </div>
           <% } else { %>
-            <img src="<%= banner.image_url %>" alt="<%= banner.title %>">
-            <div class="carousel-caption">
-              <h2><%= banner.title %></h2>
+            <div style="padding: 1.5rem; text-align: center; color: var(--text-muted); display: flex; flex-direction: column; justify-content: center; height: 100%; min-height: 200px;">
+              <span style="font-size: 2rem; margin-bottom: 0.5rem;">📦</span>
+              <p style="margin: 0; font-size: 0.9rem;">Product Showcase Unavailable</p>
             </div>
           <% } %>
         </div>
-      <% }) %>
-    </div>
-    
-    <!-- Navigation Buttons -->
-    <button class="carousel-prev" aria-label="Previous slide">&#10094;</button>
-    <button class="carousel-next" aria-label="Next slide">&#10095;</button>
-
-    <!-- Indicators -->
-    <div class="carousel-indicators">
-      <% banners.forEach((_, index) => { %>
-        <span class="carousel-dot <%= index === 0 ? 'active' : '' %>" data-slide="<%= index %>"></span>
-      <% }) %>
-    </div>
-  </div>
-
-  <style>
-    .carousel-container {
-      position: relative;
-      width: 100%;
-      margin-bottom: 2rem;
-      border-radius: var(--radius-lg);
-      overflow: hidden;
-      box-shadow: var(--shadow-lg);
-      border: 1px solid var(--border-color);
-      aspect-ratio: 1920/600; /* Maintains correct aspect ratio */
-      background-color: var(--bg-secondary);
-    }
-    
-    @media (max-width: 1200px) {
-      .carousel-container {
-        aspect-ratio: 1200/400;
-      }
-    }
-    @media (max-width: 800px) {
-      .carousel-container {
-        aspect-ratio: 800/800;
-      }
-    }
-    @media (max-width: 600px) {
-      .carousel-container {
-        aspect-ratio: 600/400;
-      }
-    }
-
-    .carousel-slides {
-      position: relative;
-      width: 100%;
-      height: 100%;
-    }
-
-    .carousel-slide {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
-    }
-
-    .carousel-slide.active {
-      opacity: 1;
-      visibility: visible;
-      position: relative;
-    }
-
-    .carousel-slide img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-
-    .carousel-caption {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: linear-gradient(to top, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0) 100%);
-      padding: 3rem 2rem 2rem 2rem;
-      color: var(--text-primary);
-      text-align: left;
-    }
-
-    .carousel-caption h2 {
-      font-size: 2rem;
-      margin: 0;
-      font-weight: 700;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-    }
-    
-    @media (max-width: 600px) {
-      .carousel-caption h2 {
-        font-size: 1.25rem;
-      }
-      .carousel-caption {
-        padding: 1.5rem 1rem 1rem 1rem;
-      }
-    }
-
-    .carousel-prev, .carousel-next {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      background-color: rgba(15, 23, 42, 0.6);
-      border: 1px solid var(--border-color);
-      color: var(--text-primary);
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.2rem;
-      transition: var(--transition-fast);
-      z-index: 10;
-    }
-
-    .carousel-prev:hover, .carousel-next:hover {
-      background-color: var(--accent-primary);
-      color: var(--bg-primary);
-      border-color: var(--accent-primary);
-    }
-
-    .carousel-prev {
-      left: 1rem;
-    }
-
-    .carousel-next {
-      right: 1rem;
-    }
-
-    .carousel-indicators {
-      position: absolute;
-      bottom: 1rem;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 0.5rem;
-      z-index: 10;
-    }
-
-    .carousel-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background-color: rgba(248, 250, 252, 0.4);
-      cursor: pointer;
-      transition: var(--transition-fast);
-    }
-
-    .carousel-dot.active {
-      background-color: var(--accent-primary);
-      width: 24px;
-      border-radius: 5px;
-    }
-  </style>
-
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const slides = document.querySelectorAll('.carousel-slide');
-      const dots = document.querySelectorAll('.carousel-dot');
-      const prevBtn = document.querySelector('.carousel-prev');
-      const nextBtn = document.querySelector('.carousel-next');
+      <% } %>
       
-      let currentIndex = 0;
-      let intervalId = null;
-      const intervalDuration = 5000; // 5 seconds auto-cycle
+      <% if (block.type === 'banner_group') { %>
+        <div class="block-span-3">
+          <% if (block.banners && block.banners.length > 0) { %>
+            <div class="carousel-container" id="carousel-<%= block.id %>">
+              <div class="carousel-slides">
+                <% block.banners.forEach((banner, index) => { %>
+                  <div class="carousel-slide <%= index === 0 ? 'active' : '' %>">
+                    <% if (banner.link_url) { %>
+                      <a href="<%= banner.link_url %>">
+                        <img src="<%= banner.image_url %>" alt="<%= banner.title %>">
+                        <div class="carousel-caption">
+                          <h2><%= banner.title %></h2>
+                        </div>
+                      </a>
+                    <% } else { %>
+                      <img src="<%= banner.image_url %>" alt="<%= banner.title %>">
+                      <div class="carousel-caption">
+                        <h2><%= banner.title %></h2>
+                      </div>
+                    <% } %>
+                  </div>
+                <% }) %>
+              </div>
+              
+              <!-- Navigation Buttons -->
+              <button class="carousel-prev" aria-label="Previous slide" onclick="window['prevSlide_<%= block.id %>']()">&#10094;</button>
+              <button class="carousel-next" aria-label="Next slide" onclick="window['nextSlide_<%= block.id %>']()">&#10095;</button>
+          
+              <!-- Indicators -->
+              <div class="carousel-indicators">
+                <% block.banners.forEach((_, index) => { %>
+                  <span class="carousel-dot <%= index === 0 ? 'active' : '' %>" data-slide="<%= index %>" onclick="window['showSlide_<%= block.id %>'](<%= index %>)"></span>
+                <% }) %>
+              </div>
+            </div>
+          <% } else { %>
+            <div style="background-color: var(--bg-secondary); border: 1px dashed var(--border-color); border-radius: var(--radius-lg); padding: 4rem; text-align: center; color: var(--text-secondary);">
+              <span style="font-size: 2.5rem; display: block; margin-bottom: 1rem;">🎠</span>
+              <p style="margin: 0; font-size: 1.1rem; font-weight: 500;">Carousel group is empty.</p>
+            </div>
+          <% } %>
+        </div>
+      <% } %>
+      
+    <% }) %>
+  <% } %>
+</div>
+
+<style>
+  /* CSS Grid Layout */
+  .storefront-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin: 2rem auto;
+    max-width: 1200px;
+  }
+  
+  .block-span-1 {
+    grid-column: span 1;
+  }
+  
+  .block-span-2 {
+    grid-column: span 2;
+  }
+  
+  .block-span-3 {
+    grid-column: span 3;
+  }
+  
+  @media (max-width: 800px) {
+    .storefront-grid {
+      grid-template-columns: 1fr;
+    }
+    .storefront-grid > div {
+      grid-column: span 1 !important;
+    }
+  }
+
+  /* Title Static Styling */
+  .block-title-static {
+    text-align: center;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+  }
+  .block-title-static h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  /* Title Link Styling */
+  .block-title-link-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.5rem;
+  }
+  .block-title-link-container h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-primary);
+  }
+  .title-link-anchor {
+    color: var(--accent-primary);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: var(--transition-fast);
+  }
+  .title-link-anchor:hover {
+    text-decoration: underline;
+  }
+
+  /* Info Card Styling */
+  .block-info-card {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  }
+  .block-info-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+  .info-card-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+  }
+  .block-info-card h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem 0;
+    color: var(--text-primary);
+  }
+  .block-info-card p {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  /* Showcase Product Card Styling */
+  .storefront-product-card {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  }
+  .storefront-product-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+  .sf-product-image-link {
+    display: block;
+    aspect-ratio: 1;
+    background-color: var(--bg-primary);
+    border-bottom: 1px solid var(--border-color);
+    overflow: hidden;
+  }
+  .sf-product-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+  .storefront-product-card:hover .sf-product-image {
+    transform: scale(1.05);
+  }
+  .sf-product-info {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+  }
+  .sf-product-name {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem 0;
+    line-height: 1.4;
+  }
+  .sf-product-name a {
+    color: var(--text-primary);
+    text-decoration: none;
+  }
+  .sf-product-name a:hover {
+    color: var(--accent-primary);
+  }
+  .sf-product-meta {
+    margin-bottom: 1rem;
+  }
+  .sf-product-price {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent-primary);
+  }
+
+  /* Carousel Styling */
+  .carousel-container {
+    position: relative;
+    width: 100%;
+    margin-bottom: 1rem;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color);
+    aspect-ratio: 1920/600;
+    background-color: var(--bg-secondary);
+  }
+  
+  @media (max-width: 1200px) {
+    .carousel-container {
+      aspect-ratio: 1200/400;
+    }
+  }
+  @media (max-width: 800px) {
+    .carousel-container {
+      aspect-ratio: 800/800;
+    }
+  }
+  @media (max-width: 600px) {
+    .carousel-container {
+      aspect-ratio: 600/400;
+    }
+  }
+
+  .carousel-slides {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  .carousel-slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
+  }
+
+  .carousel-slide.active {
+    opacity: 1;
+    visibility: visible;
+    position: relative;
+  }
+
+  .carousel-slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .carousel-caption {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0) 100%);
+    padding: 3rem 2rem 2rem 2rem;
+    color: var(--text-primary);
+    text-align: left;
+  }
+
+  .carousel-caption h2 {
+    font-size: 2rem;
+    margin: 0;
+    font-weight: 700;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  }
+  
+  @media (max-width: 600px) {
+    .carousel-caption h2 {
+      font-size: 1.25rem;
+    }
+    .carousel-caption {
+      padding: 1.5rem 1rem 1rem 1rem;
+    }
+  }
+
+  .carousel-prev, .carousel-next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    transition: var(--transition-fast);
+    z-index: 10;
+  }
+
+  .carousel-prev:hover, .carousel-next:hover {
+    background-color: var(--accent-primary);
+    color: var(--bg-primary);
+    border-color: var(--accent-primary);
+  }
+
+  .carousel-prev {
+    left: 1rem;
+  }
+
+  .carousel-next {
+    right: 1rem;
+  }
+
+  .carousel-indicators {
+    position: absolute;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 0.5rem;
+    z-index: 10;
+  }
+
+  .carousel-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: rgba(248, 250, 252, 0.4);
+    cursor: pointer;
+    transition: var(--transition-fast);
+  }
+
+  .carousel-dot.active {
+    background-color: var(--accent-primary);
+    width: 24px;
+    border-radius: 5px;
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // Map of carouselId -> { currentIndex, slides, dots, intervalId }
+    const carousels = {};
+
+    window.initCarousel = function(id) {
+      const container = document.getElementById(`carousel-${id}`);
+      if (!container) return;
+
+      const slides = container.querySelectorAll('.carousel-slide');
+      const dots = container.querySelectorAll('.carousel-dot');
+      if (slides.length === 0) return;
+      
+      carousels[id] = {
+        currentIndex: 0,
+        slides: slides,
+        dots: dots,
+        intervalId: null
+      };
 
       function showSlide(index) {
-        if (slides.length === 0) return;
+        const carousel = carousels[id];
+        if (!carousel || carousel.slides.length === 0) return;
         
-        slides[currentIndex].classList.remove('active');
-        dots[currentIndex].classList.remove('active');
+        carousel.slides[carousel.currentIndex].classList.remove('active');
+        carousel.dots[carousel.currentIndex].classList.remove('active');
         
-        currentIndex = (index + slides.length) % slides.length;
+        carousel.currentIndex = (index + carousel.slides.length) % carousel.slides.length;
         
-        slides[currentIndex].classList.add('active');
-        dots[currentIndex].classList.add('active');
+        carousel.slides[carousel.currentIndex].classList.add('active');
+        carousel.dots[carousel.currentIndex].classList.add('active');
       }
 
       function nextSlide() {
-        showSlide(currentIndex + 1);
+        const carousel = carousels[id];
+        if (!carousel) return;
+        showSlide(carousel.currentIndex + 1);
       }
 
       function prevSlide() {
-        showSlide(currentIndex - 1);
+        const carousel = carousels[id];
+        if (!carousel) return;
+        showSlide(carousel.currentIndex - 1);
       }
 
       function startAutoCycle() {
         stopAutoCycle();
-        intervalId = setInterval(nextSlide, intervalDuration);
+        carousels[id].intervalId = setInterval(nextSlide, 5000);
       }
 
       function stopAutoCycle() {
-        if (intervalId) {
-          clearInterval(intervalId);
+        const carousel = carousels[id];
+        if (carousel && carousel.intervalId) {
+          clearInterval(carousel.intervalId);
+          carousel.intervalId = null;
         }
       }
 
-      if (prevBtn) {
-        prevBtn.addEventListener('click', () => {
-          prevSlide();
-          startAutoCycle();
-        });
-      }
+      // Expose controls to window
+      window[`prevSlide_${id}`] = () => {
+        prevSlide();
+        startAutoCycle();
+      };
 
-      if (nextBtn) {
-        nextBtn.addEventListener('click', () => {
-          nextSlide();
-          startAutoCycle();
-        });
-      }
+      window[`nextSlide_${id}`] = () => {
+        nextSlide();
+        startAutoCycle();
+      };
 
-      dots.forEach(dot => {
-        dot.addEventListener('click', (e) => {
-          const targetIndex = parseInt(e.target.getAttribute('data-slide'), 10);
-          showSlide(targetIndex);
-          startAutoCycle();
-        });
-      });
+      window[`showSlide_${id}`] = (index) => {
+        showSlide(index);
+        startAutoCycle();
+      };
+
+      // Set up events
+      container.addEventListener('mouseenter', stopAutoCycle);
+      container.addEventListener('mouseleave', startAutoCycle);
 
       startAutoCycle();
+    };
 
-      const container = document.querySelector('.carousel-container');
-      if (container) {
-        container.addEventListener('mouseenter', stopAutoCycle);
-        container.addEventListener('mouseleave', startAutoCycle);
-      }
-    });
-  </script>
-<% } %>
-
-<div class="hero">
-  <h1>Your Next-Gen E-Commerce Experience</h1>
-  <p>Discover hand-picked premium lifestyle goods built with simplicity, reliability, and security in mind.</p>
-  <a href="/catalog" class="btn">Explore Product Catalog</a>
-</div>
-
-<h2 style="text-align: center; margin: 3rem 0 1rem 0; font-size: 2rem;">Why Shop With Us?</h2>
-<div class="features">
-  <div class="feature-card">
-    <div class="feature-icon">✦</div>
-    <h3>Curated Premium Selection</h3>
-    <p>We source only high-quality items designed to elevate your everyday routines and spaces.</p>
-  </div>
-  <div class="feature-card">
-    <div class="feature-icon">⚡</div>
-    <h3>Swift Automated Shipping</h3>
-    <p>Integrated directly with J&T API to calculate the most accurate, secure, and cost-effective shipping rates instantly.</p>
-  </div>
-  <div class="feature-card">
-    <div class="feature-icon">🛡️</div>
-    <h3>Secure Payments</h3>
-    <p>Powered by Xendit's secure payment gateway. End-to-end encryption ensures your payment data never touches our local servers.</p>
-  </div>
-</div>
+    // Initialize all carousels on the page
+    <% if (blocks.length > 0) { %>
+      <% blocks.forEach(block => { %>
+        <% if (block.type === 'banner_group' && block.banners && block.banners.length > 0) { %>
+          initCarousel(<%= block.id %>);
+        <% } %>
+      <% }) %>
+    <% } %>
+  });
+</script>
 
 <%- include('partials/footer') %>

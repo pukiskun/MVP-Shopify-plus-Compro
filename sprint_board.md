@@ -4,7 +4,7 @@ Welcome PM, DEV, and QA! This board serves as our shared JIRA-like tracker for a
 
 ---
 
-# 🚀 Sprint 18: Admin Page Builder UI & Homepage Grid Rendering (Proposed)
+# 🚀 Sprint 18: Admin Page Builder UI & Homepage Grid Rendering (Completed)
 
 ## Sprint 18 Goal
 Create a visual drag-and-drop/position-based admin page builder layout grid (rows of max width 3) and update the storefront homepage to dynamically query and align grid blocks (Titles, Links, Info Cards, Product Catalog Cards, and custom sized Banner Carousels).
@@ -13,9 +13,9 @@ Create a visual drag-and-drop/position-based admin page builder layout grid (row
 
 | Task ID | Assignee | Task Description | Status |
 | :--- | :--- | :--- | :--- |
-| **[TSK-DEV-18.1]** | DEV | [Admin Page Builder UI Grid View](#tsk-dev-181-admin-page-builder-ui-grid-view) | `[ ] Proposed` |
-| **[TSK-DEV-18.2]** | DEV | [Dynamic Homepage Grid Loader & Template Renderer](#tsk-dev-182-dynamic-homepage-grid-loader--template-renderer) | `[ ] Proposed` |
-| **[TSK-QA-18.1]** | QA | [Grid Alignment & Responsiveness Visual Audits](#tsk-qa-181-grid-alignment--responsiveness-visual-audits) | `[ ] Proposed` |
+| **[TSK-DEV-18.1]** | DEV | [Admin Page Builder UI Grid View](#tsk-dev-181-admin-page-builder-ui-grid-view) | `[x] Done` |
+| **[TSK-DEV-18.2]** | DEV | [Dynamic Homepage Grid Loader & Template Renderer](#tsk-dev-182-dynamic-homepage-grid-loader--template-renderer) | `[x] Done` |
+| **[TSK-QA-18.1]** | QA | [Grid Alignment & Responsiveness Visual Audits](#tsk-qa-181-grid-alignment--responsiveness-visual-audits) | `[x] Done` |
 
 ---
 
@@ -23,20 +23,20 @@ Create a visual drag-and-drop/position-based admin page builder layout grid (row
 
 ### [TSK-DEV-18.1] Admin Page Builder UI Grid View
 *   **Assignee:** DEV (Fullstack Developer)
-*   **Status:** `[ ] Proposed`
+*   **Status:** `[x] Done`
 *   **Description:** Build the admin page builder panel template layout to visualize blocks in rows of width <= 3.
 *   **Action Items:**
-    *   [ ] Create `views/admin/page-builder.ejs` interface showing blocks grouped into rows.
-    *   [ ] Add forms for creating new blocks with inputs for type, size (1x1, 2x1, 3x1), title, content, links, icons, and product SKU.
-    *   [ ] Render options to add banner groups as carousels.
+    *   [x] Create `views/admin/page-builder.ejs` interface showing blocks grouped into rows.
+    *   [x] Add forms for creating new blocks with inputs for type, size (1x1, 2x1, 3x1), title, content, links, icons, and product SKU.
+    *   [x] Render options to add banner groups as carousels.
 
 ### [TSK-DEV-18.2] Dynamic Homepage Grid Loader & Template Renderer
 *   **Assignee:** DEV (Fullstack Developer)
-*   **Status:** `[ ] Proposed`
+*   **Status:** `[x] Done`
 *   **Description:** Fetch blocks and products, and render the responsive grid on the storefront homepage.
 *   **Action Items:**
-    *   [ ] In `src/routes/pages.js`, join `homepage_blocks` with `products` (for SKU catalog cards) and active group banners.
-    *   [ ] Rewrite `views/home.ejs` to loop and style blocks (Titles, Links, Info Cards, Catalog highlights, Banners) inside a CSS Grid.
+    *   [x] In `src/routes/pages.js`, join `homepage_blocks` with `products` (for SKU catalog cards) and active group banners.
+    *   [x] Rewrite `views/home.ejs` to loop and style blocks (Titles, Links, Info Cards, Catalog highlights, Banners) inside a CSS Grid.
 
 ---
 
@@ -44,11 +44,11 @@ Create a visual drag-and-drop/position-based admin page builder layout grid (row
 
 ### [TSK-QA-18.1] Grid Alignment & Responsiveness Visual Audits
 *   **Assignee:** QA (Quality Assurance)
-*   **Status:** `[ ] Proposed`
+*   **Status:** `[x] Done`
 *   **Description:** Verify grid blocks align, wrap, and render correct data.
 *   **Action Items:**
-    *   [ ] Verify blocks wrap correctly into rows of total width <= 3.
-    *   [ ] Audit catalog card elements to assert product price and names are resolved from live database entries.
+    *   [x] Verify blocks wrap correctly into rows of total width <= 3.
+    *   [x] Audit catalog card elements to assert product price and names are resolved from live database entries.
 
 ---
 ---
