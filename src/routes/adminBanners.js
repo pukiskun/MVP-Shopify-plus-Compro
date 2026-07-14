@@ -56,8 +56,16 @@ router.use('/ad-minpanel/banners', requireAdmin);
 // GET: List all banners and render the management interface
 router.get('/ad-minpanel/banners', async (req, res) => {
   try {
-    const bannersResult = await db.query('SELECT * FROM banners ORDER BY sort_order ASC');
+    const bannersResult = await db.query(`
+      SELECT b.*, bg.group_name, bg.target_width, bg.target_height 
+      FROM banners b
+      JOIN banner_groups bg ON b.group_id = bg.id
+      ORDER BY b.sort_order ASC
+    `);
     const banners = bannersResult.rows;
+
+    const groupsResult = await db.query('SELECT * FROM banner_groups ORDER BY id ASC');
+    const bannerGroups = groupsResult.rows;
 
     let editingBanner = null;
     if (req.query.edit) {
@@ -71,6 +79,7 @@ router.get('/ad-minpanel/banners', async (req, res) => {
     res.render('admin/banners', {
       title: 'Homepage Banner Manager',
       banners,
+      bannerGroups,
       editingBanner,
       error: req.query.error || null,
       success: req.query.success || null
@@ -89,30 +98,56 @@ router.post('/ad-minpanel/banners/create', (req, res) => {
       errorMsg = err.message;
     }
 
-    const { title, target_dimensions, link_url, position } = req.body;
+    const { title, link_url, position } = req.body;
+    const groupId = parseInt(req.body.groupId || req.body.group_id, 10);
     const file = req.file;
 
     // Validate textual fields
     if (!errorMsg) {
       if (!title || title.trim() === '') {
         errorMsg = 'Title is required.';
-      } else if (!target_dimensions || !['1920x600', '1200x400', '800x800', '600x400'].includes(target_dimensions)) {
-        errorMsg = 'Invalid target dimensions selected.';
+      } else if (!groupId || isNaN(groupId)) {
+        errorMsg = 'Banner group is required.';
       } else if (!file) {
         errorMsg = 'Banner image file is required.';
       }
     }
 
     let filePath = file ? file.path : null;
+    let group = null;
+
+    if (!errorMsg) {
+      try {
+        const groupResult = await db.query('SELECT * FROM banner_groups WHERE id = $1', [groupId]);
+        group = groupResult.rows[0];
+        if (!group) {
+          errorMsg = 'Selected banner group does not exist.';
+        }
+      } catch (dbErr) {
+        errorMsg = 'Database error checking banner group.';
+      }
+    }
 
     // Verify image dimensions if we have a file and no previous error
-    if (!errorMsg && filePath) {
+    if (!errorMsg && filePath && group) {
       try {
         const dimensions = sizeOf(fs.readFileSync(filePath));
-        const [targetWidth, targetHeight] = target_dimensions.split('x').map(num => parseInt(num, 10));
-        
-        if (dimensions.width !== targetWidth || dimensions.height !== targetHeight) {
-          errorMsg = `Image dimensions (${dimensions.width}x${dimensions.height}) do not match the target dimensions (${target_dimensions}) exactly.`;
+        const uploadedWidth = dimensions.width;
+        const uploadedHeight = dimensions.height;
+
+        if (group.target_width === null || group.target_height === null) {
+          // write them to the banner_groups record, and save
+          await db.query(
+            'UPDATE banner_groups SET target_width = $1, target_height = $2 WHERE id = $3',
+            [uploadedWidth, uploadedHeight, groupId]
+          );
+          group.target_width = uploadedWidth;
+          group.target_height = uploadedHeight;
+        } else {
+          // verify the uploaded image dimensions match
+          if (uploadedWidth !== group.target_width || uploadedHeight !== group.target_height) {
+            errorMsg = `Image dimensions (${uploadedWidth}x${uploadedHeight}) do not match the group target dimensions (${group.target_width}x${group.target_height}) exactly.`;
+          }
         }
       } catch (sizeErr) {
         errorMsg = 'Invalid image file or cannot read dimensions.';
@@ -157,11 +192,15 @@ router.post('/ad-minpanel/banners/create', (req, res) => {
       }
 
       await db.query(
-        'INSERT INTO banners (title, image_url, target_dimensions, link_url, sort_order) VALUES ($1, $2, $3, $4, $5)',
-        [xss(title), imageUrl, target_dimensions, link_url ? xss(link_url) : null, sortOrder]
+        'INSERT INTO banners (title, image_url, group_id, link_url, sort_order) VALUES ($1, $2, $3, $4, $5)',
+        [xss(title), imageUrl, groupId, link_url ? xss(link_url) : null, sortOrder]
       );
 
-      await logAdminAction(process.env.ADMIN_USERNAME || 'admin', 'PRODUCT_CREATED', `Banner created: ${title} (${target_dimensions})`);
+      await logAdminAction(
+        process.env.ADMIN_USERNAME || 'admin',
+        'PRODUCT_CREATED',
+        `Banner created: ${title} in group ${group.group_name} (${group.target_width}x${group.target_height})`
+      );
 
       res.redirect('/ad-minpanel/banners?success=' + encodeURIComponent('Banner created successfully!'));
     } catch (dbErr) {
@@ -184,14 +223,15 @@ router.post('/ad-minpanel/banners/:id/edit', (req, res) => {
       errorMsg = err.message;
     }
 
-    const { title, target_dimensions, link_url, position } = req.body;
+    const { title, link_url, position } = req.body;
+    const groupId = parseInt(req.body.groupId || req.body.group_id, 10);
     const file = req.file;
 
     if (!errorMsg) {
       if (!title || title.trim() === '') {
         errorMsg = 'Title is required.';
-      } else if (!target_dimensions || !['1920x600', '1200x400', '800x800', '600x400'].includes(target_dimensions)) {
-        errorMsg = 'Invalid target dimensions selected.';
+      } else if (!groupId || isNaN(groupId)) {
+        errorMsg = 'Banner group is required.';
       }
     }
 
@@ -207,16 +247,58 @@ router.post('/ad-minpanel/banners/:id/edit', (req, res) => {
       errorMsg = 'Database error retrieving existing banner.';
     }
 
+    let group = null;
+    if (!errorMsg) {
+      try {
+        const groupResult = await db.query('SELECT * FROM banner_groups WHERE id = $1', [groupId]);
+        group = groupResult.rows[0];
+        if (!group) {
+          errorMsg = 'Selected banner group does not exist.';
+        }
+      } catch (dbErr) {
+        errorMsg = 'Database error checking banner group.';
+      }
+    }
+
     let filePath = file ? file.path : null;
 
-    // Verify image dimensions if we have a new file
-    if (!errorMsg && filePath) {
+    // Verify image dimensions
+    if (!errorMsg && group) {
       try {
-        const dimensions = sizeOf(fs.readFileSync(filePath));
-        const [targetWidth, targetHeight] = target_dimensions.split('x').map(num => parseInt(num, 10));
+        let uploadedWidth = null;
+        let uploadedHeight = null;
         
-        if (dimensions.width !== targetWidth || dimensions.height !== targetHeight) {
-          errorMsg = `Image dimensions (${dimensions.width}x${dimensions.height}) do not match target dimensions (${target_dimensions}) exactly.`;
+        if (filePath) {
+          const dimensions = sizeOf(fs.readFileSync(filePath));
+          uploadedWidth = dimensions.width;
+          uploadedHeight = dimensions.height;
+        } else if (existingBanner.group_id !== groupId) {
+          // Verify existing image with new group dimensions
+          const existingImagePath = path.join(__dirname, '../../public', existingBanner.image_url);
+          if (fs.existsSync(existingImagePath)) {
+            const dimensions = sizeOf(fs.readFileSync(existingImagePath));
+            uploadedWidth = dimensions.width;
+            uploadedHeight = dimensions.height;
+          } else {
+            errorMsg = 'Existing image file not found on disk to verify dimensions.';
+          }
+        }
+
+        if (uploadedWidth !== null && uploadedHeight !== null) {
+          if (group.target_width === null || group.target_height === null) {
+            // write them to the banner_groups record, and save
+            await db.query(
+              'UPDATE banner_groups SET target_width = $1, target_height = $2 WHERE id = $3',
+              [uploadedWidth, uploadedHeight, groupId]
+            );
+            group.target_width = uploadedWidth;
+            group.target_height = uploadedHeight;
+          } else {
+            // verify the uploaded image dimensions match
+            if (uploadedWidth !== group.target_width || uploadedHeight !== group.target_height) {
+              errorMsg = `Image dimensions (${uploadedWidth}x${uploadedHeight}) do not match the group target dimensions (${group.target_width}x${group.target_height}) exactly.`;
+            }
+          }
         }
       } catch (sizeErr) {
         errorMsg = 'Invalid image file or cannot read dimensions.';
@@ -276,9 +358,11 @@ router.post('/ad-minpanel/banners/:id/edit', (req, res) => {
         }
       }
 
+      const oldGroupId = existingBanner.group_id;
+
       await db.query(
-        'UPDATE banners SET title = $1, image_url = $2, target_dimensions = $3, link_url = $4, sort_order = $5 WHERE id = $6',
-        [xss(title), imageUrl, target_dimensions, link_url ? xss(link_url) : null, sortOrder, bannerId]
+        'UPDATE banners SET title = $1, image_url = $2, group_id = $3, link_url = $4, sort_order = $5 WHERE id = $6',
+        [xss(title), imageUrl, groupId, link_url ? xss(link_url) : null, sortOrder, bannerId]
       );
 
       // Successfully updated! Delete old file if new one was uploaded
@@ -290,7 +374,20 @@ router.post('/ad-minpanel/banners/:id/edit', (req, res) => {
         }
       }
 
-      await logAdminAction(process.env.ADMIN_USERNAME || 'admin', 'PRODUCT_UPDATED', `Banner updated: ${title} (${target_dimensions})`);
+      // If group changed, check if old group is now empty and needs dimensions reset to null
+      if (oldGroupId !== groupId) {
+        const countResult = await db.query('SELECT COUNT(*) as count FROM banners WHERE group_id = $1', [oldGroupId]);
+        const count = parseInt(countResult.rows[0].count, 10);
+        if (count === 0) {
+          await db.query('UPDATE banner_groups SET target_width = NULL, target_height = NULL WHERE id = $1', [oldGroupId]);
+        }
+      }
+
+      await logAdminAction(
+        process.env.ADMIN_USERNAME || 'admin',
+        'PRODUCT_UPDATED',
+        `Banner updated: ${title} in group ${group.group_name} (${group.target_width}x${group.target_height})`
+      );
 
       res.redirect('/ad-minpanel/banners?success=' + encodeURIComponent('Banner updated successfully!'));
     } catch (dbErr) {
@@ -314,6 +411,8 @@ router.post('/ad-minpanel/banners/:id/delete', async (req, res) => {
       return res.redirect('/ad-minpanel/banners?error=' + encodeURIComponent('Banner not found.'));
     }
 
+    const groupId = banner.group_id;
+
     // Delete image file from disk
     if (banner.image_url.startsWith('/uploads/')) {
       const imageFilePath = path.join(__dirname, '../../public', banner.image_url);
@@ -331,6 +430,13 @@ router.post('/ad-minpanel/banners/:id/delete', async (req, res) => {
 
     // Delete from DB
     await db.query('DELETE FROM banners WHERE id = $1', [bannerId]);
+
+    // Check if it was the last banner in the group
+    const countResult = await db.query('SELECT COUNT(*) as count FROM banners WHERE group_id = $1', [groupId]);
+    const count = parseInt(countResult.rows[0].count, 10);
+    if (count === 0) {
+      await db.query('UPDATE banner_groups SET target_width = NULL, target_height = NULL WHERE id = $1', [groupId]);
+    }
 
     await logAdminAction(process.env.ADMIN_USERNAME || 'admin', 'PRODUCT_DELETED', `Banner deleted: ${banner.title}`);
 

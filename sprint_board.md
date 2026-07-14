@@ -53,7 +53,7 @@ Create a visual drag-and-drop/position-based admin page builder layout grid (row
 ---
 ---
 
-# 🚀 Sprint 17: Database Migrations & Page Builder Backend Engine (Proposed)
+# 🚀 Sprint 17: Database Migrations & Page Builder Backend Engine (Completed)
 
 ## Sprint 17 Goal
 Build the page builder's database migrations and back-end logic, including banner group creations and custom size checks that restrict uploads based on the dimensions of the first banner in the group.
@@ -62,11 +62,11 @@ Build the page builder's database migrations and back-end logic, including banne
 
 | Task ID | Assignee | Task Description | Status |
 | :--- | :--- | :--- | :--- |
-| **[TSK-DEV-17.1]** | DEV | [Page Builder Database Tables & Migrations](#tsk-dev-171-page-builder-database-tables--migrations) | `[ ] Proposed` |
-| **[TSK-DEV-17.2]** | DEV | [Refactor Banner uploads with Custom Size First-Upload Rule](#tsk-dev-172-refactor-banner-uploads-with-custom-size-first-upload-rule) | `[ ] Proposed` |
-| **[TSK-DEV-17.3]** | DEV | [Page Builder Block CRUD & Reordering APIs](#tsk-dev-173-page-builder-block-crud--reordering-apis) | `[ ] Proposed` |
-| **[TSK-QA-17.1]** | QA | [First-Upload Dimension Lock Audits](#tsk-qa-171-first-upload-dimension-lock-audits) | `[ ] Proposed` |
-| **[TSK-QA-17.2]** | QA | [Page Builder API Constraint Audits](#tsk-qa-172-page-builder-api-constraint-audits) | `[ ] Proposed` |
+| **[TSK-DEV-17.1]** | DEV | [Page Builder Database Tables & Migrations](#tsk-dev-171-page-builder-database-tables--migrations) | `[x] Done` |
+| **[TSK-DEV-17.2]** | DEV | [Refactor Banner uploads with Custom Size First-Upload Rule](#tsk-dev-172-refactor-banner-uploads-with-custom-size-first-upload-rule) | `[x] Done` |
+| **[TSK-DEV-17.3]** | DEV | [Page Builder Block CRUD & Reordering APIs](#tsk-dev-173-page-builder-block-crud--reordering-apis) | `[x] Done` |
+| **[TSK-QA-17.1]** | QA | [First-Upload Dimension Lock Audits](#tsk-qa-171-first-upload-dimension-lock-audits) | `[x] Done` |
+| **[TSK-QA-17.2]** | QA | [Page Builder API Constraint Audits](#tsk-qa-172-page-builder-api-constraint-audits) | `[x] Done` |
 
 ---
 
@@ -74,31 +74,31 @@ Build the page builder's database migrations and back-end logic, including banne
 
 ### [TSK-DEV-17.1] Page Builder Database Tables & Migrations
 *   **Assignee:** DEV (Fullstack Developer)
-*   **Status:** `[ ] Proposed`
+*   **Status:** `[x] Done`
 *   **Description:** Create database schemas for homepage blocks and renamable banner groups.
 *   **Action Items:**
-    *   [ ] In `src/config/db-setup.js`, create `banner_groups` table with `target_width` and `target_height`.
-    *   [ ] In `src/config/db-setup.js`, create `homepage_blocks` table with fields for titles, contents, links, icons, SKUs, and banner group references.
-    *   [ ] Bind existing banners to a seeded default banner group.
+    *   [x] In `src/config/db-setup.js`, create `banner_groups` table with `target_width` and `target_height`.
+    *   [x] In `src/config/db-setup.js`, create `homepage_blocks` table with fields for titles, contents, links, icons, SKUs, and banner group references.
+    *   [x] Bind existing banners to a seeded default banner group.
 
 ### [TSK-DEV-17.2] Refactor Banner uploads with Custom Size First-Upload Rule
 *   **Assignee:** DEV (Fullstack Developer)
-*   **Status:** `[ ] Proposed`
+*   **Status:** `[x] Done`
 *   **Description:** Update banner uploads to enforce dimensions matching the first banner in the group.
 *   **Action Items:**
-    *   [ ] Modify upload handler in `src/routes/adminBanners.js` to read width/height via `image-size` on first upload and set the group's target.
-    *   [ ] Verify subsequent uploads in that group match the target width/height or get rejected and unlinked.
-    *   [ ] Verify deleting the last banner resets the group's target dimensions to null.
+    *   [x] Modify upload handler in `src/routes/adminBanners.js` to read width/height via `image-size` on first upload and set the group's target.
+    *   [x] Verify subsequent uploads in that group match the target width/height or get rejected and unlinked.
+    *   [x] Verify deleting the last banner resets the group's target dimensions to null.
 
 ### [TSK-DEV-17.3] Page Builder Block CRUD & Reordering APIs
 *   **Assignee:** DEV (Fullstack Developer)
-*   **Status:** `[ ] Proposed`
+*   **Status:** `[x] Done`
 *   **Description:** Implement routes to create, delete, and reorder grid building blocks.
 *   **Action Items:**
-    *   [ ] Create `src/routes/adminPageBuilder.js` implementing blocks CRUD.
-    *   [ ] Enforce size constraints on addition (e.g. info_card must be 1x1, catalog_card must be 1x1, title must be 3x1).
-    *   [ ] Implement Up/Down sorting order updates.
-    *   [ ] Mount router in `src/app.js`.
+    *   [x] Create `src/routes/adminPageBuilder.js` implementing blocks CRUD.
+    *   [x] Enforce size constraints on addition (e.g. info_card must be 1x1, catalog_card must be 1x1, title must be 3x1).
+    *   [x] Implement Up/Down sorting order updates.
+    *   [x] Mount router in `src/app.js`.
 
 ---
 
@@ -106,20 +106,20 @@ Build the page builder's database migrations and back-end logic, including banne
 
 ### [TSK-QA-17.1] First-Upload Dimension Lock Audits
 *   **Assignee:** QA (Quality Assurance)
-*   **Status:** `[ ] Proposed`
+*   **Status:** `[x] Done`
 *   **Description:** Verify custom size validation rules and cleanup unlinked files.
 *   **Action Items:**
-    *   [ ] Assert that first upload sets group target dimensions.
-    *   [ ] Assert that mismatching uploads get blocked and unlinked.
-    *   [ ] Confirm deleting all banners resets target dimensions.
+    *   [x] Assert that first upload sets group target dimensions.
+    *   [x] Assert that mismatching uploads get blocked and unlinked.
+    *   [x] Confirm deleting all banners resets target dimensions.
 
 ### [TSK-QA-17.2] Page Builder API Constraint Audits
 *   **Assignee:** QA (Quality Assurance)
-*   **Status:** `[ ] Proposed`
+*   **Status:** `[x] Done`
 *   **Description:** Verify block addition limits and ordering.
 *   **Action Items:**
-    *   [ ] Attempt creating blocks with invalid size combinations (e.g. 2x1 info card). Verify they are rejected.
-    *   [ ] Verify reordering swaps sort_orders atomically in database.
+    *   [x] Attempt creating blocks with invalid size combinations (e.g. 2x1 info card). Verify they are rejected.
+    *   [x] Verify reordering swaps sort_orders atomically in database.
 
 ---
 ---

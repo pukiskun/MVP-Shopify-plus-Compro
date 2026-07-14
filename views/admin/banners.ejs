@@ -191,7 +191,7 @@
             <th>Order</th>
             <th>Image Thumbnail</th>
             <th>Banner Title</th>
-            <th>Target Dimensions</th>
+            <th>Banner Group</th>
             <th>Target Link URL</th>
             <th>Actions</th>
           </tr>
@@ -221,8 +221,16 @@
                 <td>
                   <img src="<%= banner.image_url %>" alt="<%= banner.title %>" class="tbl-thumb">
                 </td>
-                <td style="font-weight: 600;"><%= banner.title %></td>
-                <td><code style="background-color: var(--bg-primary); padding: 0.25rem 0.5rem; border-radius: 4px; border: 1px solid var(--border-color);"><%= banner.target_dimensions %></code></td>
+                <td>
+                  <strong><%= banner.group_name %></strong>
+                  <% if (banner.target_width && banner.target_height) { %>
+                    <br>
+                    <code style="background-color: var(--bg-primary); padding: 0.25rem 0.5rem; border-radius: 4px; border: 1px solid var(--border-color); font-size: 0.85rem;"><%= banner.target_width %>x<%= banner.target_height %></code>
+                  <% } else { %>
+                    <br>
+                    <span style="color: var(--text-muted); font-size: 0.85rem;">(No dimensions set yet)</span>
+                  <% } %>
+                </td>
                 <td>
                   <% if (banner.link_url) { %>
                     <a href="<%= banner.link_url %>" target="_blank" style="color: var(--accent-primary); text-decoration: none;"><%= banner.link_url %></a>
@@ -260,12 +268,18 @@
         </div>
 
         <div class="form-group">
-          <label for="target_dimensions">Target Aspect Dimensions *</label>
-          <select id="target_dimensions" name="target_dimensions" class="form-control" required>
-            <option value="1920x600" <%= editingBanner && editingBanner.target_dimensions === '1920x600' ? 'selected' : '' %>>1920 x 600 (Desktop Banner Slider)</option>
-            <option value="1200x400" <%= editingBanner && editingBanner.target_dimensions === '1200x400' ? 'selected' : '' %>>1200 x 400 (Compact Page Banner)</option>
-            <option value="800x800" <%= editingBanner && editingBanner.target_dimensions === '800x800' ? 'selected' : '' %>>800 x 800 (Square Carousel Slide)</option>
-            <option value="600x400" <%= editingBanner && editingBanner.target_dimensions === '600x400' ? 'selected' : '' %>>600 x 400 (Mobile-Optimized Wide Banner)</option>
+          <label for="groupId">Banner Group *</label>
+          <select id="groupId" name="groupId" class="form-control" required>
+            <% bannerGroups.forEach(group => { %>
+              <option value="<%= group.id %>" <%= (editingBanner && editingBanner.group_id === group.id) || (!editingBanner && group.id === 1) ? 'selected' : '' %>>
+                <%= group.group_name %> 
+                <% if (group.target_width && group.target_height) { %>
+                  (<%= group.target_width %>x<%= group.target_height %>)
+                <% } else { %>
+                  (First upload defines dimensions)
+                <% } %>
+              </option>
+            <% }) %>
           </select>
         </div>
 

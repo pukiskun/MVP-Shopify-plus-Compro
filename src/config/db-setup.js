@@ -105,17 +105,76 @@ async function setup() {
     await db.query(`CREATE INDEX IF NOT EXISTS idx_session_expire ON session(expire);`);
 
     await db.query(`
+      CREATE TABLE IF NOT EXISTS banner_groups (
+        id SERIAL PRIMARY KEY,
+        group_name VARCHAR(255) UNIQUE NOT NULL,
+        target_width INTEGER,
+        target_height INTEGER
+      );
+    `);
+
+    // Ensure default banner group "Main Carousel" exists with ID 1
+    const checkGroup = await db.query("SELECT id FROM banner_groups WHERE id = 1 OR group_name = 'Main Carousel'");
+    if (checkGroup.rows.length === 0) {
+      await db.query(`
+        INSERT INTO banner_groups (id, group_name, target_width, target_height)
+        VALUES (1, 'Main Carousel', 1920, 600)
+      `);
+    } else {
+      const hasId1 = checkGroup.rows.some(r => r.id === 1);
+      if (!hasId1) {
+        await db.query("DELETE FROM banner_groups WHERE group_name = 'Main Carousel'");
+        await db.query(`
+          INSERT INTO banner_groups (id, group_name, target_width, target_height)
+          VALUES (1, 'Main Carousel', 1920, 600)
+        `);
+      }
+    }
+    await db.query(`SELECT setval(pg_get_serial_sequence('banner_groups', 'id'), COALESCE(MAX(id), 1)) FROM banner_groups`);
+
+    await db.query(`
       CREATE TABLE IF NOT EXISTS banners (
         id SERIAL PRIMARY KEY,
         title VARCHAR(255) NOT NULL,
         image_url TEXT NOT NULL,
-        target_dimensions VARCHAR(50) NOT NULL CHECK (target_dimensions IN ('1920x600', '1200x400', '800x800', '600x400')),
+        group_id INTEGER NOT NULL REFERENCES banner_groups(id) ON DELETE CASCADE,
         link_url TEXT,
         sort_order INTEGER NOT NULL,
         created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
       );
     `);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_banners_sort_order ON banners(sort_order);`);
+
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS homepage_blocks (
+        id SERIAL PRIMARY KEY,
+        type VARCHAR(50) NOT NULL CHECK (type IN ('info_card', 'catalog_card', 'title', 'title_link', 'banner_group')),
+        title VARCHAR(255),
+        content TEXT,
+        link_url TEXT,
+        icon VARCHAR(255),
+        product_sku VARCHAR(150) REFERENCES products(sku) ON DELETE SET NULL,
+        banner_group_id INTEGER REFERENCES banner_groups(id) ON DELETE SET NULL,
+        width INTEGER NOT NULL,
+        height INTEGER NOT NULL,
+        sort_order INTEGER NOT NULL
+      );
+    `);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_homepage_blocks_sort_order ON homepage_blocks(sort_order);`);
+
+    // Migrate existing banners table if needed
+    const checkBannersGroupId = await db.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'banners' AND column_name = 'group_id'
+    `);
+    if (checkBannersGroupId.rows.length === 0) {
+      console.log('Migrating banners table: adding group_id column...');
+      await db.query(`ALTER TABLE banners ADD COLUMN group_id INTEGER REFERENCES banner_groups(id) ON DELETE CASCADE`);
+      await db.query(`UPDATE banners SET group_id = 1 WHERE group_id IS NULL`);
+      await db.query(`ALTER TABLE banners ALTER COLUMN group_id SET NOT NULL`);
+      await db.query(`ALTER TABLE banners DROP COLUMN IF EXISTS target_dimensions`);
+    }
 
     console.log('Tables structures verified/created.');
 
@@ -256,14 +315,14 @@ async function setup() {
         {
           title: 'Unleash Premium Quality',
           image_url: 'https://via.placeholder.com/1920x600/10b981/ffffff?text=Premium+Quality+Goods',
-          target_dimensions: '1920x600',
+          group_id: 1,
           link_url: '/catalog',
           sort_order: 1
         },
         {
           title: 'Upgrade Your Gear',
           image_url: 'https://via.placeholder.com/1920x600/1e293b/ffffff?text=Upgrade+Your+Gear',
-          target_dimensions: '1920x600',
+          group_id: 1,
           link_url: '/catalog?type=Electronics',
           sort_order: 2
         }
@@ -271,9 +330,9 @@ async function setup() {
 
       for (const banner of seedBanners) {
         await db.query(
-          `INSERT INTO banners (title, image_url, target_dimensions, link_url, sort_order)
+          `INSERT INTO banners (title, image_url, group_id, link_url, sort_order)
            VALUES ($1, $2, $3, $4, $5)`,
-          [banner.title, banner.image_url, banner.target_dimensions, banner.link_url, banner.sort_order]
+          [banner.title, banner.image_url, banner.group_id, banner.link_url, banner.sort_order]
         );
       }
       console.log('Banners seeding completed successfully!');
