@@ -4,7 +4,65 @@ Welcome PM, DEV, and QA! This board serves as our shared JIRA-like tracker for a
 
 ---
 
-# 🚀 Sprint 14: Neon PostgreSQL Migration (Proposed)
+# 🚀 Sprint 15: Vercel Deployment Fixes & 404 Separation (Proposed)
+
+## Sprint 15 Goal
+Fix the `/cart` (and potentially other) routes rendering the home page on Vercel deployments. Address async wrapper breakage in the serverless entry point, static asset routing, session cookie security for HTTPS, and create a dedicated 404 error page.
+
+## 📊 Sprint 15 Dashboard
+
+| Task ID | Assignee | Task Description | Status |
+| :--- | :--- | :--- | :--- |
+| **[TSK-DEV-15.1]** | DEV | [Fix Vercel Serverless Entry Point & Static Routing](#tsk-dev-151-fix-vercel-serverless-entry-point--static-routing) | `[ ] Proposed` |
+| **[TSK-DEV-15.2]** | DEV | [Session Cookie HTTPS & Trust Proxy Configuration](#tsk-dev-152-session-cookie-https--trust-proxy-configuration) | `[ ] Proposed` |
+| **[TSK-DEV-15.3]** | DEV | [Create Dedicated 404 Error Page](#tsk-dev-153-create-dedicated-404-error-page) | `[ ] Proposed` |
+| **[TSK-QA-15.1]** | QA | [Vercel Route Resolution & Session Persistence Audits](#tsk-qa-151-vercel-route-resolution--session-persistence-audits) | `[ ] Proposed` |
+
+---
+
+## 🛠️ Developer Tickets (DEV) - Sprint 15
+
+### [TSK-DEV-15.1] Fix Vercel Serverless Entry Point & Static Routing
+*   **Assignee:** DEV (Fullstack Developer)
+*   **Status:** `[ ] Proposed`
+*   **Description:** Fix the async wrapper in `api/index.js` that breaks Express middleware chains on Vercel, and configure static asset routes to bypass the serverless function.
+*   **Action Items:**
+    *   [ ] Refactor `api/index.js` to export Express app directly instead of wrapping in async handler.
+    *   [ ] Update `vercel.json` to add dedicated static file routes for `/css`, `/uploads`, and public assets served by Vercel CDN.
+
+### [TSK-DEV-15.2] Session Cookie HTTPS & Trust Proxy Configuration
+*   **Assignee:** DEV (Fullstack Developer)
+*   **Status:** `[ ] Proposed`
+*   **Description:** Fix session cookies not being sent on Vercel's HTTPS domain.
+*   **Action Items:**
+    *   [ ] Set `app.set('trust proxy', 1)` in `src/app.js` for Vercel's reverse proxy.
+    *   [ ] Set session cookie `secure` dynamically: `process.env.NODE_ENV === 'production'`.
+
+### [TSK-DEV-15.3] Create Dedicated 404 Error Page
+*   **Assignee:** DEV (Fullstack Developer)
+*   **Status:** `[ ] Proposed`
+*   **Description:** Replace the 404 handler that renders `home` view with a dedicated 404 error page so routing failures are immediately visible.
+*   **Action Items:**
+    *   [ ] Create `views/404.ejs` with clear "Page Not Found" messaging and navigation links.
+    *   [ ] Update the 404 handler in `src/app.js` to render `404` view instead of `home`.
+
+---
+
+## 🔍 Quality Assurance Tickets (QA) - Sprint 15
+
+### [TSK-QA-15.1] Vercel Route Resolution & Session Persistence Audits
+*   **Assignee:** QA (Quality Assurance)
+*   **Status:** `[ ] Proposed`
+*   **Description:** Verify all routes render correct pages and sessions persist across redirects.
+*   **Action Items:**
+    *   [ ] Hit `/cart`, `/catalog`, `/checkout`, and `/nonexistent` and assert correct status codes and HTML content.
+    *   [ ] Verify add-to-cart → redirect → cart page shows the added item.
+    *   [ ] Verify `/nonexistent` shows the new 404 page, not the home page.
+
+---
+---
+
+# 🚀 Sprint 14: Neon PostgreSQL Migration (Completed)
 
 ## Sprint 14 Goal
 Migrate the entire application database layer from synchronous SQLite (`better-sqlite3`) to asynchronous cloud PostgreSQL (`pg` + Neon connection pool). This enables production-grade persistence and concurrent locking, preparing the application for successful stateless Vercel deployments.
