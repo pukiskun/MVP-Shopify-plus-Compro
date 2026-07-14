@@ -32,7 +32,7 @@
               <a href="#" class="nav-dropdown-toggle" onclick="event.preventDefault();">Hello, <%= customerName %> <span>▼</span></a>
               <ul class="nav-dropdown-menu">
                 <li class="cart-icon-container">
-                  <a href="/cart" class="<%= typeof activePage !== 'undefined' && activePage === 'cart' ? 'active' : '' %>">
+                  <a id="cart-nav-target" href="/cart" class="<%= typeof activePage !== 'undefined' && activePage === 'cart' ? 'active' : '' %>">
                     Cart
                     <% if (typeof cartCount !== 'undefined' && cartCount > 0) { %>
                       <span class="cart-badge"><%= cartCount %></span>
@@ -52,7 +52,7 @@
           <% } else { %>
             <li><a href="/login" class="<%= typeof activePage !== 'undefined' && (activePage === 'login' || activePage === 'register') ? 'active' : '' %>">Login / Register</a></li>
             <li class="cart-icon-container">
-              <a href="/cart" class="<%= typeof activePage !== 'undefined' && activePage === 'cart' ? 'active' : '' %>">
+              <a id="cart-nav-target" href="/cart" class="<%= typeof activePage !== 'undefined' && activePage === 'cart' ? 'active' : '' %>">
                 Cart
                 <% if (typeof cartCount !== 'undefined' && cartCount > 0) { %>
                   <span class="cart-badge"><%= cartCount %></span>

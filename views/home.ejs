@@ -1,5 +1,259 @@
 <%- include('partials/header') %>
 
+<% if (typeof banners !== 'undefined' && banners.length > 0) { %>
+  <div class="carousel-container">
+    <div class="carousel-slides">
+      <% banners.forEach((banner, index) => { %>
+        <div class="carousel-slide <%= index === 0 ? 'active' : '' %>">
+          <% if (banner.link_url) { %>
+            <a href="<%= banner.link_url %>">
+              <img src="<%= banner.image_url %>" alt="<%= banner.title %>">
+              <div class="carousel-caption">
+                <h2><%= banner.title %></h2>
+              </div>
+            </a>
+          <% } else { %>
+            <img src="<%= banner.image_url %>" alt="<%= banner.title %>">
+            <div class="carousel-caption">
+              <h2><%= banner.title %></h2>
+            </div>
+          <% } %>
+        </div>
+      <% }) %>
+    </div>
+    
+    <!-- Navigation Buttons -->
+    <button class="carousel-prev" aria-label="Previous slide">&#10094;</button>
+    <button class="carousel-next" aria-label="Next slide">&#10095;</button>
+
+    <!-- Indicators -->
+    <div class="carousel-indicators">
+      <% banners.forEach((_, index) => { %>
+        <span class="carousel-dot <%= index === 0 ? 'active' : '' %>" data-slide="<%= index %>"></span>
+      <% }) %>
+    </div>
+  </div>
+
+  <style>
+    .carousel-container {
+      position: relative;
+      width: 100%;
+      margin-bottom: 2rem;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border-color);
+      aspect-ratio: 1920/600; /* Maintains correct aspect ratio */
+      background-color: var(--bg-secondary);
+    }
+    
+    @media (max-width: 1200px) {
+      .carousel-container {
+        aspect-ratio: 1200/400;
+      }
+    }
+    @media (max-width: 800px) {
+      .carousel-container {
+        aspect-ratio: 800/800;
+      }
+    }
+    @media (max-width: 600px) {
+      .carousel-container {
+        aspect-ratio: 600/400;
+      }
+    }
+
+    .carousel-slides {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    .carousel-slide {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
+    }
+
+    .carousel-slide.active {
+      opacity: 1;
+      visibility: visible;
+      position: relative;
+    }
+
+    .carousel-slide img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .carousel-caption {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(to top, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0) 100%);
+      padding: 3rem 2rem 2rem 2rem;
+      color: var(--text-primary);
+      text-align: left;
+    }
+
+    .carousel-caption h2 {
+      font-size: 2rem;
+      margin: 0;
+      font-weight: 700;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
+    
+    @media (max-width: 600px) {
+      .carousel-caption h2 {
+        font-size: 1.25rem;
+      }
+      .carousel-caption {
+        padding: 1.5rem 1rem 1rem 1rem;
+      }
+    }
+
+    .carousel-prev, .carousel-next {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background-color: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      transition: var(--transition-fast);
+      z-index: 10;
+    }
+
+    .carousel-prev:hover, .carousel-next:hover {
+      background-color: var(--accent-primary);
+      color: var(--bg-primary);
+      border-color: var(--accent-primary);
+    }
+
+    .carousel-prev {
+      left: 1rem;
+    }
+
+    .carousel-next {
+      right: 1rem;
+    }
+
+    .carousel-indicators {
+      position: absolute;
+      bottom: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 0.5rem;
+      z-index: 10;
+    }
+
+    .carousel-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: rgba(248, 250, 252, 0.4);
+      cursor: pointer;
+      transition: var(--transition-fast);
+    }
+
+    .carousel-dot.active {
+      background-color: var(--accent-primary);
+      width: 24px;
+      border-radius: 5px;
+    }
+  </style>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const slides = document.querySelectorAll('.carousel-slide');
+      const dots = document.querySelectorAll('.carousel-dot');
+      const prevBtn = document.querySelector('.carousel-prev');
+      const nextBtn = document.querySelector('.carousel-next');
+      
+      let currentIndex = 0;
+      let intervalId = null;
+      const intervalDuration = 5000; // 5 seconds auto-cycle
+
+      function showSlide(index) {
+        if (slides.length === 0) return;
+        
+        slides[currentIndex].classList.remove('active');
+        dots[currentIndex].classList.remove('active');
+        
+        currentIndex = (index + slides.length) % slides.length;
+        
+        slides[currentIndex].classList.add('active');
+        dots[currentIndex].classList.add('active');
+      }
+
+      function nextSlide() {
+        showSlide(currentIndex + 1);
+      }
+
+      function prevSlide() {
+        showSlide(currentIndex - 1);
+      }
+
+      function startAutoCycle() {
+        stopAutoCycle();
+        intervalId = setInterval(nextSlide, intervalDuration);
+      }
+
+      function stopAutoCycle() {
+        if (intervalId) {
+          clearInterval(intervalId);
+        }
+      }
+
+      if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+          prevSlide();
+          startAutoCycle();
+        });
+      }
+
+      if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+          nextSlide();
+          startAutoCycle();
+        });
+      }
+
+      dots.forEach(dot => {
+        dot.addEventListener('click', (e) => {
+          const targetIndex = parseInt(e.target.getAttribute('data-slide'), 10);
+          showSlide(targetIndex);
+          startAutoCycle();
+        });
+      });
+
+      startAutoCycle();
+
+      const container = document.querySelector('.carousel-container');
+      if (container) {
+        container.addEventListener('mouseenter', stopAutoCycle);
+        container.addEventListener('mouseleave', startAutoCycle);
+      }
+    });
+  </script>
+<% } %>
+
 <div class="hero">
   <h1>Your Next-Gen E-Commerce Experience</h1>
   <p>Discover hand-picked premium lifestyle goods built with simplicity, reliability, and security in mind.</p>

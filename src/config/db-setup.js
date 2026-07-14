@@ -1,3 +1,4 @@
+require('dotenv').config();
 const db = require('./db');
 
 async function setup() {
@@ -102,6 +103,19 @@ async function setup() {
       );
     `);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_session_expire ON session(expire);`);
+
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS banners (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        image_url TEXT NOT NULL,
+        target_dimensions VARCHAR(50) NOT NULL CHECK (target_dimensions IN ('1920x600', '1200x400', '800x800', '600x400')),
+        link_url TEXT,
+        sort_order INTEGER NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_banners_sort_order ON banners(sort_order);`);
 
     console.log('Tables structures verified/created.');
 
@@ -230,6 +244,39 @@ async function setup() {
       // Set all existing product stock counts to 10 if they are 0 as part of our migration
       await db.query('UPDATE products SET stock = 10 WHERE stock = 0');
       console.log('Verified default stock levels for existing products.');
+    }
+
+    // Seed banners if table is empty
+    const { rows: countBannerRows } = await db.query('SELECT COUNT(*) as count FROM banners');
+    const bannerCount = parseInt(countBannerRows[0].count, 10);
+
+    if (bannerCount === 0) {
+      console.log('Seeding initial banners...');
+      const seedBanners = [
+        {
+          title: 'Unleash Premium Quality',
+          image_url: 'https://via.placeholder.com/1920x600/10b981/ffffff?text=Premium+Quality+Goods',
+          target_dimensions: '1920x600',
+          link_url: '/catalog',
+          sort_order: 1
+        },
+        {
+          title: 'Upgrade Your Gear',
+          image_url: 'https://via.placeholder.com/1920x600/1e293b/ffffff?text=Upgrade+Your+Gear',
+          target_dimensions: '1920x600',
+          link_url: '/catalog?type=Electronics',
+          sort_order: 2
+        }
+      ];
+
+      for (const banner of seedBanners) {
+        await db.query(
+          `INSERT INTO banners (title, image_url, target_dimensions, link_url, sort_order)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [banner.title, banner.image_url, banner.target_dimensions, banner.link_url, banner.sort_order]
+        );
+      }
+      console.log('Banners seeding completed successfully!');
     }
 
     // Alter order_items columns if missing

@@ -1,6 +1,7 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const xss = require('xss');
+const db = require('../config/db');
 
 const router = express.Router();
 
@@ -11,12 +12,24 @@ const getCartCount = (req) => {
 };
 
 // Home page
-router.get('/', (req, res) => {
-  res.render('home', {
-    title: 'E-Commerce Company Profile',
-    activePage: 'home',
-    cartCount: getCartCount(req)
-  });
+router.get('/', async (req, res) => {
+  try {
+    const bannersResult = await db.query('SELECT * FROM banners ORDER BY sort_order ASC');
+    res.render('home', {
+      title: 'E-Commerce Company Profile',
+      activePage: 'home',
+      cartCount: getCartCount(req),
+      banners: bannersResult.rows
+    });
+  } catch (error) {
+    console.error('Failed to load home page banners:', error);
+    res.render('home', {
+      title: 'E-Commerce Company Profile',
+      activePage: 'home',
+      cartCount: getCartCount(req),
+      banners: []
+    });
+  }
 });
 
 // About Us page

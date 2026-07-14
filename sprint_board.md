@@ -4,7 +4,127 @@ Welcome PM, DEV, and QA! This board serves as our shared JIRA-like tracker for a
 
 ---
 
-# 🚀 Sprint 16: Flying Cart Animations & Banner Carousel Manager (Proposed)
+# 🚀 Sprint 18: Admin Page Builder UI & Homepage Grid Rendering (Proposed)
+
+## Sprint 18 Goal
+Create a visual drag-and-drop/position-based admin page builder layout grid (rows of max width 3) and update the storefront homepage to dynamically query and align grid blocks (Titles, Links, Info Cards, Product Catalog Cards, and custom sized Banner Carousels).
+
+## 📊 Sprint 18 Dashboard
+
+| Task ID | Assignee | Task Description | Status |
+| :--- | :--- | :--- | :--- |
+| **[TSK-DEV-18.1]** | DEV | [Admin Page Builder UI Grid View](#tsk-dev-181-admin-page-builder-ui-grid-view) | `[ ] Proposed` |
+| **[TSK-DEV-18.2]** | DEV | [Dynamic Homepage Grid Loader & Template Renderer](#tsk-dev-182-dynamic-homepage-grid-loader--template-renderer) | `[ ] Proposed` |
+| **[TSK-QA-18.1]** | QA | [Grid Alignment & Responsiveness Visual Audits](#tsk-qa-181-grid-alignment--responsiveness-visual-audits) | `[ ] Proposed` |
+
+---
+
+## 🛠️ Developer Tickets (DEV) - Sprint 18
+
+### [TSK-DEV-18.1] Admin Page Builder UI Grid View
+*   **Assignee:** DEV (Fullstack Developer)
+*   **Status:** `[ ] Proposed`
+*   **Description:** Build the admin page builder panel template layout to visualize blocks in rows of width <= 3.
+*   **Action Items:**
+    *   [ ] Create `views/admin/page-builder.ejs` interface showing blocks grouped into rows.
+    *   [ ] Add forms for creating new blocks with inputs for type, size (1x1, 2x1, 3x1), title, content, links, icons, and product SKU.
+    *   [ ] Render options to add banner groups as carousels.
+
+### [TSK-DEV-18.2] Dynamic Homepage Grid Loader & Template Renderer
+*   **Assignee:** DEV (Fullstack Developer)
+*   **Status:** `[ ] Proposed`
+*   **Description:** Fetch blocks and products, and render the responsive grid on the storefront homepage.
+*   **Action Items:**
+    *   [ ] In `src/routes/pages.js`, join `homepage_blocks` with `products` (for SKU catalog cards) and active group banners.
+    *   [ ] Rewrite `views/home.ejs` to loop and style blocks (Titles, Links, Info Cards, Catalog highlights, Banners) inside a CSS Grid.
+
+---
+
+## 🔍 Quality Assurance Tickets (QA) - Sprint 18
+
+### [TSK-QA-18.1] Grid Alignment & Responsiveness Visual Audits
+*   **Assignee:** QA (Quality Assurance)
+*   **Status:** `[ ] Proposed`
+*   **Description:** Verify grid blocks align, wrap, and render correct data.
+*   **Action Items:**
+    *   [ ] Verify blocks wrap correctly into rows of total width <= 3.
+    *   [ ] Audit catalog card elements to assert product price and names are resolved from live database entries.
+
+---
+---
+
+# 🚀 Sprint 17: Database Migrations & Page Builder Backend Engine (Proposed)
+
+## Sprint 17 Goal
+Build the page builder's database migrations and back-end logic, including banner group creations and custom size checks that restrict uploads based on the dimensions of the first banner in the group.
+
+## 📊 Sprint 17 Dashboard
+
+| Task ID | Assignee | Task Description | Status |
+| :--- | :--- | :--- | :--- |
+| **[TSK-DEV-17.1]** | DEV | [Page Builder Database Tables & Migrations](#tsk-dev-171-page-builder-database-tables--migrations) | `[ ] Proposed` |
+| **[TSK-DEV-17.2]** | DEV | [Refactor Banner uploads with Custom Size First-Upload Rule](#tsk-dev-172-refactor-banner-uploads-with-custom-size-first-upload-rule) | `[ ] Proposed` |
+| **[TSK-DEV-17.3]** | DEV | [Page Builder Block CRUD & Reordering APIs](#tsk-dev-173-page-builder-block-crud--reordering-apis) | `[ ] Proposed` |
+| **[TSK-QA-17.1]** | QA | [First-Upload Dimension Lock Audits](#tsk-qa-171-first-upload-dimension-lock-audits) | `[ ] Proposed` |
+| **[TSK-QA-17.2]** | QA | [Page Builder API Constraint Audits](#tsk-qa-172-page-builder-api-constraint-audits) | `[ ] Proposed` |
+
+---
+
+## 🛠️ Developer Tickets (DEV) - Sprint 17
+
+### [TSK-DEV-17.1] Page Builder Database Tables & Migrations
+*   **Assignee:** DEV (Fullstack Developer)
+*   **Status:** `[ ] Proposed`
+*   **Description:** Create database schemas for homepage blocks and renamable banner groups.
+*   **Action Items:**
+    *   [ ] In `src/config/db-setup.js`, create `banner_groups` table with `target_width` and `target_height`.
+    *   [ ] In `src/config/db-setup.js`, create `homepage_blocks` table with fields for titles, contents, links, icons, SKUs, and banner group references.
+    *   [ ] Bind existing banners to a seeded default banner group.
+
+### [TSK-DEV-17.2] Refactor Banner uploads with Custom Size First-Upload Rule
+*   **Assignee:** DEV (Fullstack Developer)
+*   **Status:** `[ ] Proposed`
+*   **Description:** Update banner uploads to enforce dimensions matching the first banner in the group.
+*   **Action Items:**
+    *   [ ] Modify upload handler in `src/routes/adminBanners.js` to read width/height via `image-size` on first upload and set the group's target.
+    *   [ ] Verify subsequent uploads in that group match the target width/height or get rejected and unlinked.
+    *   [ ] Verify deleting the last banner resets the group's target dimensions to null.
+
+### [TSK-DEV-17.3] Page Builder Block CRUD & Reordering APIs
+*   **Assignee:** DEV (Fullstack Developer)
+*   **Status:** `[ ] Proposed`
+*   **Description:** Implement routes to create, delete, and reorder grid building blocks.
+*   **Action Items:**
+    *   [ ] Create `src/routes/adminPageBuilder.js` implementing blocks CRUD.
+    *   [ ] Enforce size constraints on addition (e.g. info_card must be 1x1, catalog_card must be 1x1, title must be 3x1).
+    *   [ ] Implement Up/Down sorting order updates.
+    *   [ ] Mount router in `src/app.js`.
+
+---
+
+## 🔍 Quality Assurance Tickets (QA) - Sprint 17
+
+### [TSK-QA-17.1] First-Upload Dimension Lock Audits
+*   **Assignee:** QA (Quality Assurance)
+*   **Status:** `[ ] Proposed`
+*   **Description:** Verify custom size validation rules and cleanup unlinked files.
+*   **Action Items:**
+    *   [ ] Assert that first upload sets group target dimensions.
+    *   [ ] Assert that mismatching uploads get blocked and unlinked.
+    *   [ ] Confirm deleting all banners resets target dimensions.
+
+### [TSK-QA-17.2] Page Builder API Constraint Audits
+*   **Assignee:** QA (Quality Assurance)
+*   **Status:** `[ ] Proposed`
+*   **Description:** Verify block addition limits and ordering.
+*   **Action Items:**
+    *   [ ] Attempt creating blocks with invalid size combinations (e.g. 2x1 info card). Verify they are rejected.
+    *   [ ] Verify reordering swaps sort_orders atomically in database.
+
+---
+---
+
+# 🚀 Sprint 16: Flying Cart Animations & Banner Carousel Manager (Completed)
 
 ## Sprint 16 Goal
 Enhance user interaction with client-side flying cart animations, add a quick checkout "Buy Now" option, and build a database-driven homepage banner carousel managed entirely through a new admin dashboard interface.
@@ -13,11 +133,11 @@ Enhance user interaction with client-side flying cart animations, add a quick ch
 
 | Task ID | Assignee | Task Description | Status |
 | :--- | :--- | :--- | :--- |
-| **[TSK-DEV-16.1]** | DEV | [Storefront Flying Cart Animation & Buy Now Button](#tsk-dev-161-storefront-flying-cart-animation--buy-now-button) | `[ ] Proposed` |
-| **[TSK-DEV-16.2]** | DEV | [Banners Database Migration & Home Carousel Slider](#tsk-dev-162-banners-database-migration--home-carousel-slider) | `[ ] Proposed` |
-| **[TSK-DEV-16.3]** | DEV | [Admin Banner Management Control Panel](#tsk-dev-163-admin-banner-management-control-panel) | `[ ] Proposed` |
-| **[TSK-QA-16.1]** | QA | [Add-to-cart Interceptions & UI Animation Audits](#tsk-qa-161-add-to-cart-interceptions--ui-animation-audits) | `[ ] Proposed` |
-| **[TSK-QA-16.2]** | QA | [Admin Banner CRUD & Reordering Operations Audits](#tsk-qa-162-admin-banner-crud--reordering-operations-audits) | `[ ] Proposed` |
+| **[TSK-DEV-16.1]** | DEV | [Storefront Flying Cart Animation & Buy Now Button](#tsk-dev-161-storefront-flying-cart-animation--buy-now-button) | `[x] Done` |
+| **[TSK-DEV-16.2]** | DEV | [Banners Database Migration & Home Carousel Slider](#tsk-dev-162-banners-database-migration--home-carousel-slider) | `[x] Done` |
+| **[TSK-DEV-16.3]** | DEV | [Admin Banner Management Control Panel](#tsk-dev-163-admin-banner-management-control-panel) | `[x] Done` |
+| **[TSK-QA-16.1]** | QA | [Add-to-cart Interceptions & UI Animation Audits](#tsk-qa-161-add-to-cart-interceptions--ui-animation-audits) | `[x] Done` |
+| **[TSK-QA-16.2]** | QA | [Admin Banner CRUD & Reordering Operations Audits](#tsk-qa-162-admin-banner-crud--reordering-operations-audits) | `[x] Done` |
 
 ---
 
@@ -25,28 +145,28 @@ Enhance user interaction with client-side flying cart animations, add a quick ch
 
 ### [TSK-DEV-16.1] Storefront Flying Cart Animation & Buy Now Button
 *   **Assignee:** DEV (Fullstack Developer)
-*   **Status:** `[ ] Proposed`
+*   **Status:** `[x] Done`
 *   **Description:** Implement non-blocking AJAX cart addition with a flying image animation and a separate "Buy Now" button.
 *   **Action Items:**
-    *   [ ] Add "Buy Now" button to product details page.
-    *   [ ] Intercept "Add to Cart" submit with AJAX, trigger floating image animation towards navbar target, and update cart badge.
-    *   [ ] Verify "Buy Now" submits and immediately redirects to `/cart`.
+    *   [x] Add "Buy Now" button to product details page.
+    *   [x] Intercept "Add to Cart" submit with AJAX, trigger floating image animation towards navbar target, and update cart badge.
+    *   [x] Verify "Buy Now" submits and immediately redirects to `/cart`.
 
 ### [TSK-DEV-16.2] Banners Database Migration & Home Carousel Slider
 *   **Assignee:** DEV (Fullstack Developer)
-*   **Status:** `[ ] Proposed`
+*   **Status:** `[x] Done`
 *   **Description:** Create `banners` database table and implement the homepage carousel slider.
 *   **Action Items:**
-    *   [ ] In `src/config/db-setup.js`, add `banners` table schema migration and default seed records.
-    *   [ ] Render active database banners in a slider carousel at the top of the homepage (`views/home.ejs`).
+    *   [x] In `src/config/db-setup.js`, add `banners` table schema migration and default seed records.
+    *   [x] Render active database banners in a slider carousel at the top of the homepage (`views/home.ejs`).
 
 ### [TSK-DEV-16.3] Admin Banner Management Control Panel
 *   **Assignee:** DEV (Fullstack Developer)
-*   **Status:** `[ ] Proposed`
+*   **Status:** `[x] Done`
 *   **Description:** Create admin views and router controllers to CRUD and reorder homepage banners.
 *   **Action Items:**
-    *   [ ] Create `views/admin/banners.ejs` dashboard with position-targeted adding, deleting, and up/down sorting.
-    *   [ ] Write `src/routes/adminBanners.js` router to handle banner CRUD, image uploads via `multer`, and sort-order recalculations.
+    *   [x] Create `views/admin/banners.ejs` dashboard with position-targeted adding, deleting, and up/down sorting.
+    *   [x] Write `src/routes/adminBanners.js` router to handle banner CRUD, image uploads via `multer`, and sort-order recalculations.
 
 ---
 
@@ -54,19 +174,19 @@ Enhance user interaction with client-side flying cart animations, add a quick ch
 
 ### [TSK-QA-16.1] Add-to-cart Interceptions & UI Animation Audits
 *   **Assignee:** QA (Quality Assurance)
-*   **Status:** `[ ] Proposed`
+*   **Status:** `[x] Done`
 *   **Description:** Verify animation rendering and cart counts.
 *   **Action Items:**
-    *   [ ] Verify flying animation works correctly without page reload.
-    *   [ ] Assert that "Buy Now" adds correct items and redirects to checkout.
+    *   [x] Verify flying animation works correctly without page reload.
+    *   [x] Assert that "Buy Now" adds correct items and redirects to checkout.
 
 ### [TSK-QA-16.2] Admin Banner CRUD & Reordering Operations Audits
 *   **Assignee:** QA (Quality Assurance)
-*   **Status:** `[ ] Proposed`
+*   **Status:** `[x] Done`
 *   **Description:** Audit banner database modifications and positioning logic.
 *   **Action Items:**
-    *   [ ] Add new banners at first, last, and intermediate positions. Verify homepage sort order updates accordingly.
-    *   [ ] Delete a banner and assert that the associated upload file is removed from storage.
+    *   [x] Add new banners at first, last, and intermediate positions. Verify homepage sort order updates accordingly.
+    *   [x] Delete a banner and assert that the associated upload file is removed from storage.
 
 ---
 ---

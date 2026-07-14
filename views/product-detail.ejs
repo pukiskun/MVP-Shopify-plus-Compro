@@ -41,7 +41,7 @@
       <%= product.description %>
     </div>
     
-    <form action="/cart/add" method="POST" style="display: flex; gap: 1rem; align-items: center;">
+    <form action="/cart/add" method="POST" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
       <!-- Hidden field for product id. No price is sent from the frontend to maintain integrity -->
       <input type="hidden" name="productId" value="<%= product.id %>">
       
@@ -52,13 +52,16 @@
       </div>
       
       <% if (product.stock === 0) { %>
-        <button type="button" class="btn btn-secondary" style="flex: 1; cursor: not-allowed;" disabled>Out of Stock</button>
+        <button type="button" class="btn btn-secondary" style="flex: 1; min-width: 150px; cursor: not-allowed;" disabled>Out of Stock</button>
       <% } else { %>
-        <button type="submit" class="btn" style="flex: 1;">Add to Shopping Cart</button>
+        <button type="submit" id="btn-add-to-cart" class="btn btn-secondary" style="flex: 1; min-width: 150px;">Add to Shopping Cart</button>
+        <button type="submit" id="btn-buy-now" class="btn" style="flex: 1; min-width: 150px;">Buy Now</button>
       <% } %>
     </form>
   </div>
 </div>
+
+<div id="toast-container"></div>
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
@@ -80,6 +83,138 @@
         // Clamp to either 10 items max or the actual maximum stock count
         if (currentVal < Math.min(10, maxStock)) {
           qtyInput.value = currentVal + 1;
+        }
+      });
+    }
+
+    const form = document.querySelector('form[action="/cart/add"]');
+    const toastContainer = document.getElementById('toast-container');
+
+    function showToast(message, type = 'success') {
+      if (!toastContainer) return;
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      
+      const messageSpan = document.createElement('span');
+      messageSpan.className = 'toast-message';
+      messageSpan.textContent = message;
+      
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'toast-close';
+      closeBtn.innerHTML = '&times;';
+      closeBtn.onclick = () => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-20px)';
+        setTimeout(() => toast.remove(), 300);
+      };
+      
+      toast.appendChild(messageSpan);
+      toast.appendChild(closeBtn);
+      toastContainer.appendChild(toast);
+      
+      // Auto close after 4 seconds
+      setTimeout(() => {
+        if (toast.parentNode) {
+          toast.style.opacity = '0';
+          toast.style.transform = 'translateY(-20px)';
+          setTimeout(() => toast.remove(), 300);
+        }
+      }, 4000);
+    }
+
+    function updateCartBadge(count) {
+      const cartLink = document.getElementById('cart-nav-target');
+      if (!cartLink) return;
+      
+      let badge = cartLink.querySelector('.cart-badge');
+      if (count > 0) {
+        if (!badge) {
+          badge = document.createElement('span');
+          badge.className = 'cart-badge';
+          cartLink.appendChild(badge);
+        }
+        badge.textContent = count;
+      } else {
+        if (badge) {
+          badge.remove();
+        }
+      }
+    }
+
+    if (form) {
+      form.addEventListener('submit', async (e) => {
+        // If Buy Now button is clicked, let it perform standard POST submit which redirects to /cart
+        if (e.submitter && e.submitter.id === 'btn-buy-now') {
+          return;
+        }
+
+        e.preventDefault();
+
+        const productId = form.querySelector('input[name="productId"]').value;
+        const quantity = form.querySelector('input[name="quantity"]').value;
+
+        // Perform flying animation
+        const image = document.querySelector('.product-detail-image');
+        const target = document.getElementById('cart-nav-target');
+
+        if (image && target) {
+          const rect = image.getBoundingClientRect();
+          const clone = image.cloneNode(true);
+
+          clone.style.position = 'fixed';
+          clone.style.zIndex = '99999';
+          clone.style.left = `${rect.left}px`;
+          clone.style.top = `${rect.top}px`;
+          clone.style.width = `${rect.width}px`;
+          clone.style.height = `${rect.height}px`;
+          clone.style.borderRadius = '50%';
+          clone.style.transition = 'all 0.8s cubic-bezier(0.25, 1, 0.5, 1)';
+          clone.style.opacity = '0.8';
+          clone.style.pointerEvents = 'none';
+
+          document.body.appendChild(clone);
+
+          // Force reflow
+          clone.offsetWidth;
+
+          const targetRect = target.getBoundingClientRect();
+          clone.style.left = `${targetRect.left + targetRect.width / 2 - 15}px`;
+          clone.style.top = `${targetRect.top + targetRect.height / 2 - 15}px`;
+          clone.style.width = '30px';
+          clone.style.height = '30px';
+          clone.style.opacity = '0.1';
+
+          setTimeout(() => {
+            clone.remove();
+          }, 800);
+        }
+
+        try {
+          const response = await fetch('/cart/add', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'Accept': 'application/json'
+            },
+            body: new URLSearchParams({
+              productId,
+              quantity
+            })
+          });
+
+          if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.error || 'Failed to add item to cart.');
+          }
+
+          const data = await response.json();
+          if (data.success) {
+            updateCartBadge(data.cartCount);
+            showToast('Successfully added item to cart!', 'success');
+          }
+        } catch (error) {
+          console.error(error);
+          showToast(error.message || 'Error adding item to cart.', 'error');
         }
       });
     }
