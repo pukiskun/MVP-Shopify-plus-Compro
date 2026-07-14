@@ -4,6 +4,73 @@ Welcome PM, DEV, and QA! This board serves as our shared JIRA-like tracker for a
 
 ---
 
+# 🚀 Sprint 16: Flying Cart Animations & Banner Carousel Manager (Proposed)
+
+## Sprint 16 Goal
+Enhance user interaction with client-side flying cart animations, add a quick checkout "Buy Now" option, and build a database-driven homepage banner carousel managed entirely through a new admin dashboard interface.
+
+## 📊 Sprint 16 Dashboard
+
+| Task ID | Assignee | Task Description | Status |
+| :--- | :--- | :--- | :--- |
+| **[TSK-DEV-16.1]** | DEV | [Storefront Flying Cart Animation & Buy Now Button](#tsk-dev-161-storefront-flying-cart-animation--buy-now-button) | `[ ] Proposed` |
+| **[TSK-DEV-16.2]** | DEV | [Banners Database Migration & Home Carousel Slider](#tsk-dev-162-banners-database-migration--home-carousel-slider) | `[ ] Proposed` |
+| **[TSK-DEV-16.3]** | DEV | [Admin Banner Management Control Panel](#tsk-dev-163-admin-banner-management-control-panel) | `[ ] Proposed` |
+| **[TSK-QA-16.1]** | QA | [Add-to-cart Interceptions & UI Animation Audits](#tsk-qa-161-add-to-cart-interceptions--ui-animation-audits) | `[ ] Proposed` |
+| **[TSK-QA-16.2]** | QA | [Admin Banner CRUD & Reordering Operations Audits](#tsk-qa-162-admin-banner-crud--reordering-operations-audits) | `[ ] Proposed` |
+
+---
+
+## 🛠️ Developer Tickets (DEV) - Sprint 16
+
+### [TSK-DEV-16.1] Storefront Flying Cart Animation & Buy Now Button
+*   **Assignee:** DEV (Fullstack Developer)
+*   **Status:** `[ ] Proposed`
+*   **Description:** Implement non-blocking AJAX cart addition with a flying image animation and a separate "Buy Now" button.
+*   **Action Items:**
+    *   [ ] Add "Buy Now" button to product details page.
+    *   [ ] Intercept "Add to Cart" submit with AJAX, trigger floating image animation towards navbar target, and update cart badge.
+    *   [ ] Verify "Buy Now" submits and immediately redirects to `/cart`.
+
+### [TSK-DEV-16.2] Banners Database Migration & Home Carousel Slider
+*   **Assignee:** DEV (Fullstack Developer)
+*   **Status:** `[ ] Proposed`
+*   **Description:** Create `banners` database table and implement the homepage carousel slider.
+*   **Action Items:**
+    *   [ ] In `src/config/db-setup.js`, add `banners` table schema migration and default seed records.
+    *   [ ] Render active database banners in a slider carousel at the top of the homepage (`views/home.ejs`).
+
+### [TSK-DEV-16.3] Admin Banner Management Control Panel
+*   **Assignee:** DEV (Fullstack Developer)
+*   **Status:** `[ ] Proposed`
+*   **Description:** Create admin views and router controllers to CRUD and reorder homepage banners.
+*   **Action Items:**
+    *   [ ] Create `views/admin/banners.ejs` dashboard with position-targeted adding, deleting, and up/down sorting.
+    *   [ ] Write `src/routes/adminBanners.js` router to handle banner CRUD, image uploads via `multer`, and sort-order recalculations.
+
+---
+
+## 🔍 Quality Assurance Tickets (QA) - Sprint 16
+
+### [TSK-QA-16.1] Add-to-cart Interceptions & UI Animation Audits
+*   **Assignee:** QA (Quality Assurance)
+*   **Status:** `[ ] Proposed`
+*   **Description:** Verify animation rendering and cart counts.
+*   **Action Items:**
+    *   [ ] Verify flying animation works correctly without page reload.
+    *   [ ] Assert that "Buy Now" adds correct items and redirects to checkout.
+
+### [TSK-QA-16.2] Admin Banner CRUD & Reordering Operations Audits
+*   **Assignee:** QA (Quality Assurance)
+*   **Status:** `[ ] Proposed`
+*   **Description:** Audit banner database modifications and positioning logic.
+*   **Action Items:**
+    *   [ ] Add new banners at first, last, and intermediate positions. Verify homepage sort order updates accordingly.
+    *   [ ] Delete a banner and assert that the associated upload file is removed from storage.
+
+---
+---
+
 # 🚀 Sprint 15: Vercel Deployment Fixes & 404 Separation (Completed)
 
 ## Sprint 15 Goal
