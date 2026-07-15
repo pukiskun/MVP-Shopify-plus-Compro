@@ -4,6 +4,63 @@ Welcome PM, DEV, and QA! This board serves as our shared JIRA-like tracker for a
 
 ---
 
+# 🚀 Sprint 22: Performance Boost & Security Hardening (Proposed)
+
+## Sprint 22 Goal
+Optimize storefront page loading performance (gzip, browser caching, dynamic WebP image conversions, SQL database indexing lookups) and harden application layer security parameters (Helmet headers, HPP parameter pollution protection, and secure session cookie naming).
+
+## 📊 Sprint 22 Dashboard
+
+| Task ID | Assignee | Task Description | Status |
+| :--- | :--- | :--- | :--- |
+| **[TSK-DEV-22.1]** | DEV | [Middleware Compression, Caching, & Security Headers](#tsk-dev-221-middleware-compression-caching--security-headers) | `[ ] Proposed` |
+| **[TSK-DEV-22.2]** | DEV | [Database Indexing Migrations](#tsk-dev-222-database-indexing-migrations) | `[ ] Proposed` |
+| **[TSK-DEV-22.3]** | DEV | [Image Optimization & WebP Conversion](#tsk-dev-223-image-optimization--webp-conversion) | `[ ] Proposed` |
+| **[TSK-QA-22.1]** | QA | [Performance & Security Audits](#tsk-qa-221-performance--security-audits) | `[ ] Proposed` |
+
+---
+
+## 🛠️ Developer Tickets (DEV) - Sprint 22
+
+### [TSK-DEV-22.1] Middleware Compression, Caching, & Security Headers
+*   **Assignee:** DEV (Fullstack Developer)
+*   **Status:** `[ ] Proposed`
+*   **Description:** Register performance compression, parameter pollution guards, Helmet security headers, and caching controls.
+*   **Action Items:**
+    *   [ ] Register `compression()`, `helmet()`, and `hpp()` in `src/app.js`.
+    *   [ ] Configure long-term cache headers on `express.static` assets and rename session cookie to `__Host-mvp-session`.
+
+### [TSK-DEV-22.2] Database Indexing Migrations
+*   **Assignee:** DEV (Fullstack Developer)
+*   **Status:** `[ ] Proposed`
+*   **Description:** Write SQL database migrations to index primary lookup coordinates.
+*   **Action Items:**
+    *   [ ] Add B-Tree indexes on `products(sku)`, `orders(customer_id)`, `orders(uuid)`, and `homepage_blocks(sort_order)` in `src/config/db-setup.js`.
+
+### [TSK-DEV-22.3] Image Optimization & WebP Conversion
+*   **Assignee:** DEV (Fullstack Developer)
+*   **Status:** `[ ] Proposed`
+*   **Description:** Integrate sharp library to compress and convert uploads on the fly.
+*   **Action Items:**
+    *   [ ] Install `sharp` dependency.
+    *   [ ] Refactor multer callbacks in `src/routes/adminProducts.js` and `src/routes/adminBanners.js` to convert image uploads to WebP, clean temp raw uploads, and save optimized webp references to DB.
+
+---
+
+## 🔍 Quality Assurance Tickets (QA) - Sprint 22
+
+### [TSK-QA-22.1] Performance & Security Audits
+*   **Assignee:** QA (Quality Assurance)
+*   **Status:** `[ ] Proposed`
+*   **Description:** Verify gzip transmission, caching rules, WebP conversions, SQL indexing scans, HTTP security headers, and parameter pollution defenses.
+*   **Action Items:**
+    *   [ ] Assert `Content-Encoding: gzip` and `Cache-Control` header rules resolve successfully on storefront resources.
+    *   [ ] Confirm uploading banner/product files creates WebP outputs.
+    *   [ ] Audit security headers, verify cookie naming, and run fuzzed param pollution test cases.
+
+---
+---
+
 # 🚀 Sprint 21: Customizable Website Themes (Completed)
 
 ## Sprint 21 Goal
