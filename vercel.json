@@ -12,11 +12,11 @@
   "routes": [
     {
       "src": "/css/(.*)",
-      "dest": "/css/$1"
+      "dest": "/public/css/$1"
     },
     {
       "src": "/uploads/(.*)",
-      "dest": "/uploads/$1"
+      "dest": "/public/uploads/$1"
     },
     {
       "src": "/(.*)",
