@@ -4,7 +4,72 @@ Welcome PM, DEV, and QA! This board serves as our shared JIRA-like tracker for a
 
 ---
 
-# 🚀 Sprint 20: Drag-and-Drop Page Builder Layouts (Active)
+# 🚀 Sprint 21: Customizable Website Themes (Proposed)
+
+## Sprint 21 Goal
+Add website theme customization controls (colors, fonts, and border radii) directly inside the admin page builder panel, saving variables in a settings table and injecting EJS style overrides globally using an in-memory cache to optimize performance.
+
+## 📊 Sprint 21 Dashboard
+
+| Task ID | Assignee | Task Description | Status |
+| :--- | :--- | :--- | :--- |
+| **[TSK-DEV-21.1]** | DEV | [Theme Schema, Seeds, & Cache Middleware](#tsk-dev-211-theme-schema-seeds--cache-middleware) | `[ ] Proposed` |
+| **[TSK-DEV-21.2]** | DEV | [Dynamic EJS Style Injection & CDN Fonts](#tsk-dev-212-dynamic-ejs-style-injection--cdn-fonts) | `[ ] Proposed` |
+| **[TSK-DEV-21.3]** | DEV | [Admin Theme Customizer Panel UI](#tsk-dev-213-admin-theme-customizer-panel-ui) | `[ ] Proposed` |
+| **[TSK-QA-21.1]** | QA | [EJS Styling & Font Loading Audits](#tsk-qa-211-ejs-styling--font-loading-audits) | `[ ] Proposed` |
+| **[TSK-QA-21.2]** | QA | [Cache Coherence & Settings Validation Audits](#tsk-qa-212-cache-coherence--settings-validation-audits) | `[ ] Proposed` |
+
+---
+
+## 🛠️ Developer Tickets (DEV) - Sprint 21
+
+### [TSK-DEV-21.1] Theme Schema, Seeds, & Cache Middleware
+*   **Assignee:** DEV (Fullstack Developer)
+*   **Status:** `[ ] Proposed`
+*   **Description:** Create schema to store theme variables and implement cache middleware to prevent query overload.
+*   **Action Items:**
+    *   [ ] In `src/config/db-setup.js`, create `site_settings` table and seed default color/sizing variables.
+    *   [ ] Implement `src/utils/themeCache.js` and mount dynamic injection middleware globally in `src/app.js`.
+
+### [TSK-DEV-21.2] Dynamic EJS Style Injection & CDN Fonts
+*   **Assignee:** DEV (Fullstack Developer)
+*   **Status:** `[ ] Proposed`
+*   **Description:** Inject CSS overrides in EJS header and load selected Google Fonts dynamically.
+*   **Action Items:**
+    *   [ ] Refactor `views/partials/header.ejs` to parse and link CDN fonts matching database configurations.
+    *   [ ] Inject custom style block overriding colors (`--bg-primary`, `--accent-primary`) and border radius.
+
+### [TSK-DEV-21.3] Admin Theme Customizer Panel UI
+*   **Assignee:** DEV (Fullstack Developer)
+*   **Status:** `[ ] Proposed`
+*   **Description:** Build theme settings forms (color pickers, font lists, radii selectors) inside page builder dashboard.
+*   **Action Items:**
+    *   [ ] Create "Theme Customizer" tab form in `views/admin/page-builder.ejs`.
+    *   [ ] Add routes in `src/routes/adminPageBuilder.js` to process POST theme updates and flush the memory cache.
+
+---
+
+## 🔍 Quality Assurance Tickets (QA) - Sprint 21
+
+### [TSK-QA-21.1] EJS Styling & Font Loading Audits
+*   **Assignee:** QA (Quality Assurance)
+*   **Status:** `[ ] Proposed`
+*   **Description:** Verify theme CSS style overrides and fonts load correctly on storefront pages.
+*   **Action Items:**
+    *   [ ] Verify storefront pages link selected font CDN and style definitions override variables correctly.
+
+### [TSK-QA-21.2] Cache Coherence & Settings Validation Audits
+*   **Assignee:** QA (Quality Assurance)
+*   **Status:** `[ ] Proposed`
+*   **Description:** Verify theme settings updates flush cache and validate color format inputs.
+*   **Action Items:**
+    *   [ ] Assert that saving new colors updates cache instantly on next storefront page load.
+    *   [ ] Audit edit inputs to verify colors are validated as valid hex codes.
+
+---
+---
+
+# 🚀 Sprint 20: Drag-and-Drop Page Builder Layouts (Completed)
 
 ## Sprint 20 Goal
 Implement an interactive drag-and-drop reordering system in the Homepage Page Builder admin dashboard using SortableJS, and create a bulk reorder backend endpoint to update database sort orders atomically.
