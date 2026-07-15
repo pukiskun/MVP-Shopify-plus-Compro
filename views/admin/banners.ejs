@@ -222,6 +222,7 @@
                 <td>
                   <img src="<%= banner.image_url %>" alt="<%= banner.title %>" class="tbl-thumb">
                 </td>
+                <td><%= banner.title %></td>
                 <td>
                   <strong><%= banner.group_name %></strong>
                   <% if (banner.target_width && banner.target_height) { %>
@@ -255,78 +256,104 @@
       </table>
     </div>
 
-    <div class="card-form">
-      <h3 style="margin-bottom: 1.5rem; font-size: 1.25rem; font-weight: 700;">
-        <%= editingBanner ? 'Edit Banner: ' + editingBanner.title : 'Add New Homepage Banner' %>
-      </h3>
-      
-      <form action="<%= editingBanner ? '/ad-minpanel/banners/' + editingBanner.id + '/edit' : '/ad-minpanel/banners/create' %>?_csrf=<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>" method="POST" enctype="multipart/form-data">
-        <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+    <div class="forms-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; align-items: start; margin-bottom: 3rem;">
+      <div class="card-form">
+        <h3 style="margin-bottom: 1.5rem; font-size: 1.25rem; font-weight: 700;">
+          <%= editingBanner ? 'Edit Banner: ' + editingBanner.title : 'Add New Homepage Banner' %>
+        </h3>
         
-        <div class="form-group">
-          <label for="title">Banner Title *</label>
-          <input type="text" id="title" name="title" class="form-control" placeholder="Enter descriptive banner title" value="<%= editingBanner ? editingBanner.title : '' %>" required>
-        </div>
+        <form action="<%= editingBanner ? '/ad-minpanel/banners/' + editingBanner.id + '/edit' : '/ad-minpanel/banners/create' %>?_csrf=<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>" method="POST" enctype="multipart/form-data">
+          <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+          
+          <div class="form-group">
+            <label for="title">Banner Title *</label>
+            <input type="text" id="title" name="title" class="form-control" placeholder="Enter descriptive banner title" value="<%= editingBanner ? editingBanner.title : '' %>" required>
+          </div>
 
-        <div class="form-group">
-          <label for="groupId">Banner Group *</label>
-          <select id="groupId" name="groupId" class="form-control" required>
-            <% bannerGroups.forEach(group => { %>
-              <option value="<%= group.id %>" <%= (editingBanner && editingBanner.group_id === group.id) || (!editingBanner && group.id === 1) ? 'selected' : '' %>>
-                <%= group.group_name %> 
-                <% if (group.target_width && group.target_height) { %>
-                  (<%= group.target_width %>x<%= group.target_height %>)
-                <% } else { %>
-                  (First upload defines dimensions)
-                <% } %>
-              </option>
-            <% }) %>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="link_url">Click Destination URL (Link URL)</label>
-          <input type="text" id="link_url" name="link_url" class="form-control" placeholder="e.g. /catalog or /catalog?type=Electronics (leave blank for none)" value="<%= editingBanner ? editingBanner.link_url : '' %>">
-        </div>
-
-        <div class="form-group">
-          <label for="position">Sequence Position Placement</label>
-          <select id="position" name="position" class="form-control">
-            <% if (editingBanner) { %>
-              <option value="current" selected>Keep Current Sequence Order Position</option>
-            <% } %>
-            <option value="first" <%= !editingBanner && banners.length === 0 ? 'selected' : '' %>>Insert at the Very Beginning (First)</option>
-            <option value="last" <%= !editingBanner && banners.length > 0 ? 'selected' : '' %>>Insert at the Very End (Last)</option>
-            <% if (banners.length > 0) { %>
-              <optgroup label="Place In-Between / After Banner">
-                <% banners.forEach(b => { %>
-                  <% if (!editingBanner || b.id !== editingBanner.id) { %>
-                    <option value="after:<%= b.id %>">After Banner: "<%= b.title %>"</option>
+          <div class="form-group">
+            <label for="groupId">Banner Group *</label>
+            <select id="groupId" name="groupId" class="form-control" required>
+              <% bannerGroups.forEach(group => { %>
+                <option value="<%= group.id %>" <%= (editingBanner && editingBanner.group_id === group.id) || (!editingBanner && group.id === 1) ? 'selected' : '' %>>
+                  <%= group.group_name %> 
+                  <% if (group.target_width && group.target_height) { %>
+                    (<%= group.target_width %>x<%= group.target_height %>)
+                  <% } else { %>
+                    (First upload defines dimensions)
                   <% } %>
-                <% }) %>
-              </optgroup>
+                </option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="link_url">Click Destination URL (Link URL)</label>
+            <input type="text" id="link_url" name="link_url" class="form-control" placeholder="e.g. /catalog or /catalog?type=Electronics (leave blank for none)" value="<%= editingBanner ? editingBanner.link_url : '' %>">
+          </div>
+
+          <div class="form-group">
+            <label for="position">Sequence Position Placement</label>
+            <select id="position" name="position" class="form-control">
+              <% if (editingBanner) { %>
+                <option value="current" selected>Keep Current Sequence Order Position</option>
+              <% } %>
+              <option value="first" <%= !editingBanner && banners.length === 0 ? 'selected' : '' %>>Insert at the Very Beginning (First)</option>
+              <option value="last" <%= !editingBanner && banners.length > 0 ? 'selected' : '' %>>Insert at the Very End (Last)</option>
+              <% if (banners.length > 0) { %>
+                <optgroup label="Place In-Between / After Banner">
+                  <% banners.forEach(b => { %>
+                    <% if (!editingBanner || b.id !== editingBanner.id) { %>
+                      <option value="after:<%= b.id %>">After Banner: "<%= b.title %>"</option>
+                    <% } %>
+                  <% }) %>
+                </optgroup>
+              <% } %>
+            </select>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 2rem;">
+            <label for="bannerImage">Banner Image File * <%= editingBanner ? '(Leave empty to keep existing image)' : '' %></label>
+            <input type="file" id="bannerImage" name="bannerImage" class="form-control" accept="image/*" <%= editingBanner ? '' : 'required' %>>
+            <% if (editingBanner) { %>
+              <div style="margin-top: 0.5rem; display: flex; align-items: center; gap: 0.75rem;">
+                <span style="font-size: 0.85rem; color: var(--text-secondary);">Current Image:</span>
+                <img src="<%= editingBanner.image_url %>" alt="Current image" style="height: 35px; border-radius: 4px; border: 1px solid var(--border-color);">
+              </div>
             <% } %>
-          </select>
-        </div>
+          </div>
 
-        <div class="form-group" style="margin-bottom: 2rem;">
-          <label for="bannerImage">Banner Image File * <%= editingBanner ? '(Leave empty to keep existing image)' : '' %></label>
-          <input type="file" id="bannerImage" name="bannerImage" class="form-control" accept="image/*" <%= editingBanner ? '' : 'required' %>>
-          <% if (editingBanner) { %>
-            <div style="margin-top: 0.5rem; display: flex; align-items: center; gap: 0.75rem;">
-              <span style="font-size: 0.85rem; color: var(--text-secondary);">Current Image:</span>
-              <img src="<%= editingBanner.image_url %>" alt="Current image" style="height: 35px; border-radius: 4px; border: 1px solid var(--border-color);">
-            </div>
-          <% } %>
-        </div>
+          <div style="display: flex; gap: 1rem;">
+            <button type="submit" class="btn" style="flex: 1;"><%= editingBanner ? 'Update Banner Details' : 'Create & Upload Banner' %></button>
+            <% if (editingBanner) { %>
+              <a href="/ad-minpanel/banners" class="btn btn-secondary" style="flex: 1;">Cancel Editing</a>
+            <% } %>
+          </div>
+        </form>
+      </div>
 
-        <div style="display: flex; gap: 1rem;">
-          <button type="submit" class="btn" style="flex: 1;"><%= editingBanner ? 'Update Banner Details' : 'Create & Upload Banner' %></button>
-          <% if (editingBanner) { %>
-            <a href="/ad-minpanel/banners" class="btn btn-secondary" style="flex: 1;">Cancel Editing</a>
-          <% } %>
-        </div>
-      </form>
+      <div class="card-form">
+        <h3 style="margin-bottom: 1.5rem; font-size: 1.25rem; font-weight: 700;">Create New Banner Group</h3>
+        <form action="/ad-minpanel/banners/groups/new" method="POST">
+          <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+          
+          <div class="form-group">
+            <label for="group_name">Group Name *</label>
+            <input type="text" id="group_name" name="group_name" class="form-control" placeholder="e.g. Mobile Carousel, Promo Grid" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="target_width">Target Width (px)</label>
+            <input type="number" id="target_width" name="target_width" class="form-control" placeholder="e.g. 1920 (optional)">
+          </div>
+          
+          <div class="form-group" style="margin-bottom: 2rem;">
+            <label for="target_height">Target Height (px)</label>
+            <input type="number" id="target_height" name="target_height" class="form-control" placeholder="e.g. 600 (optional)">
+          </div>
+          
+          <button type="submit" class="btn" style="width: 100%;">Create Banner Group</button>
+        </form>
+      </div>
     </div>
   </div>
 </body>

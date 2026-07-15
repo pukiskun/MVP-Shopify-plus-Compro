@@ -4,103 +4,77 @@ Welcome PM, DEV, and QA! This board serves as our shared JIRA-like tracker for a
 
 ---
 
-# 🚀 Sprint 19: Builder Editing, Row Reordering, UI Patches, & Loading States (Active)
+# 🚀 Sprint 19: Builder Customizations, Row Reordering, & Global Loading States (Active)
 
 ## Sprint 19 Goal
-Implement block parameter editing, row-level layout sorting swaps, add banner group creation forms, align banners dashboard tables, seed a default homepage block configuration template, and add global top loading progress bars and button spinners.
+Build EJS page builder block editing forms, row-level layout sorting reorders, add banner group creation forms, align banners table headers, implement default template layout seeds on database start, and configure global UI loaders (skeletons, page progress loaders, and button action spinners).
 
 ## 📊 Sprint 19 Dashboard
 
 | Task ID | Assignee | Task Description | Status |
 | :--- | :--- | :--- | :--- |
-| **[TSK-DEV-19.1]** | DEV | [Seed Default Homepage Block Template](#tsk-dev-191-seed-default-homepage-block-template) | `[ ] Proposed` |
-| **[TSK-DEV-19.2]** | DEV | [Global Top Progress Bar & Button Spinners](#tsk-dev-192-global-top-progress-bar--button-spinners) | `[ ] Proposed` |
-| **[TSK-DEV-19.3]** | DEV | [Banners Dashboard Alignment & Group Creation](#tsk-dev-193-banners-dashboard-alignment--group-creation) | `[ ] Proposed` |
-| **[TSK-DEV-19.4]** | DEV | [Page Builder Block Edit API & UI Form](#tsk-dev-194-page-builder-block-edit-api--ui-form) | `[ ] Proposed` |
-| **[TSK-DEV-19.5]** | DEV | [Row-Level Sorting Swaps Reordering](#tsk-dev-195-row-level-sorting-swaps-reordering) | `[ ] Proposed` |
-| **[TSK-QA-19.1]** | QA | [Default Homepage Seeding Audits](#tsk-qa-191-default-homepage-seeding-audits) | `[ ] Proposed` |
-| **[TSK-QA-19.2]** | QA | [Global Loading States Visual Audits](#tsk-qa-192-global-loading-states-visual-audits) | `[ ] Proposed` |
-| **[TSK-QA-19.3]** | QA | [Banners Column Alignment & Group Audits](#tsk-qa-193-banners-column-alignment--group-audits) | `[ ] Proposed` |
-| **[TSK-QA-19.4]** | QA | [Page Builder Block Edit Verification](#tsk-qa-194-page-builder-block-edit-verification) | `[ ] Proposed` |
-| **[TSK-QA-19.5]** | QA | [Row-Level Atomic Swap Verification](#tsk-qa-195-row-level-atomic-swap-verification) | `[ ] Proposed` |
+| **[TSK-DEV-19.1]** | DEV | [Page Builder Block Editing & Row Reordering Backend](#tsk-dev-191-page-builder-block-editing--row-reordering-backend) | `[ ] Proposed` |
+| **[TSK-DEV-19.2]** | DEV | [Homepage Default Blocks Seeding & Dynamic Carousels](#tsk-dev-192-homepage-default-blocks-seeding--dynamic-carousels) | `[ ] Proposed` |
+| **[TSK-DEV-19.3]** | DEV | [Admin Banners and Page Builder EJS UI Enhancements](#tsk-dev-193-admin-banners-and-page-builder-ejs-ui-enhancements) | `[ ] Proposed` |
+| **[TSK-DEV-19.4]** | DEV | [Global Loading Indicators, Top Progress Bars, & Skeleton CSS](#tsk-dev-194-global-loading-indicators-top-progress-bars--skeleton-css) | `[ ] Proposed` |
+| **[TSK-QA-19.1]** | QA | [Row reorders and edit block audits](#tsk-qa-191-row-reorders-and-edit-block-audits) | `[ ] Proposed` |
+| **[TSK-QA-19.2]** | QA | [Default layout seeds and loading states audits](#tsk-qa-192-default-layout-seeds-and-loading-states-audits) | `[ ] Proposed` |
 
 ---
 
 ## 🛠️ Developer Tickets (DEV) - Sprint 19
 
-### [TSK-DEV-19.1] Seed Default Homepage Block Template
+### [TSK-DEV-19.1] Page Builder Block Editing & Row Reordering Backend
 *   **Assignee:** DEV (Fullstack Developer)
 *   **Status:** `[ ] Proposed`
-*   **Description:** Seed a default layout grid (Main Carousel, Title, Info Cards, Title Link, Catalog Cards) if blocks table is empty.
+*   **Description:** Implement block editing endpoints and row-based reordering transactions.
 *   **Action Items:**
-    *   [ ] In `src/config/db-setup.js`, add database seeding script blocks for the default home layout grid.
+    *   [ ] In `src/routes/adminPageBuilder.js`, write `POST /ad-minpanel/page-builder/blocks/:id/edit` with dimensions check.
+    *   [ ] In `src/routes/adminPageBuilder.js`, write `POST /ad-minpanel/page-builder/rows/reorder` to swap order numbers of adjacent block row arrays atomically.
 
-### [TSK-DEV-19.2] Global Top Progress Bar & Button Spinners
+### [TSK-DEV-19.2] Homepage Default Blocks Seeding & Dynamic Carousels
 *   **Assignee:** DEV (Fullstack Developer)
 *   **Status:** `[ ] Proposed`
-*   **Description:** Implement visual top-loading progress bar on page transitions and forms, and spinner indicators on clicked buttons.
+*   **Description:** Create default blocks on startup and dynamic EJS loaders.
 *   **Action Items:**
-    *   [ ] In `public/css/styles.css`, define styles for `#loading-bar` and `.btn-loading` spinner animations.
-    *   [ ] In `views/partials/header.ejs`, inject a loader progress bar and hook submit/click events to trigger transitions.
+    *   [ ] In `src/config/db-setup.js`, check if `homepage_blocks` is empty and seed default blocks.
 
-### [TSK-DEV-19.3] Banners Dashboard Alignment & Group Creation
+### [TSK-DEV-19.3] Admin Banners and Page Builder EJS UI Enhancements
 *   **Assignee:** DEV (Fullstack Developer)
 *   **Status:** `[ ] Proposed`
-*   **Description:** Fix column structure in active banners table and add new banner group creator form.
+*   **Description:** Correct banner misalignment, add group forms, and build edit/reorder block views.
 *   **Action Items:**
-    *   [ ] Add `<td>` for banner descriptive `title` inside EJS body row inside `views/admin/banners.ejs` to match header count.
-    *   [ ] Create form and router endpoint `POST /ad-minpanel/banners/groups/new` to register named groups.
+    *   [ ] Add `banner.title` column in `views/admin/banners.ejs` to align columns.
+    *   [ ] Add "Create Banner Group" card form in `views/admin/banners.ejs` side-by-side with banner upload form.
+    *   [ ] Add inline Edit forms and row-reordering trigger buttons in `views/admin/page-builder.ejs`.
 
-### [TSK-DEV-19.4] Page Builder Block Edit API & UI Form
+### [TSK-DEV-19.4] Global Loading Indicators, Top Progress Bars, & Skeleton CSS
 *   **Assignee:** DEV (Fullstack Developer)
 *   **Status:** `[ ] Proposed`
-*   **Description:** Build block parameter editing endpoints and toggle editor UI forms.
+*   **Description:** Animate page transitions, form submissions, and layout placeholder states.
 *   **Action Items:**
-    *   [ ] Write `POST /ad-minpanel/page-builder/blocks/:id/edit` validating block size formats.
-    *   [ ] Add inline Edit toggles or modal dialog forms inside `views/admin/page-builder.ejs`.
-
-### [TSK-DEV-19.5] Row-Level Sorting Swaps Reordering
-*   **Assignee:** DEV (Fullstack Developer)
-*   **Status:** `[ ] Proposed`
-*   **Description:** Implement APIs and visual buttons to swap sorting values of entire blocks rows.
-*   **Action Items:**
-    *   [ ] Implement `POST /ad-minpanel/page-builder/rows/reorder` to swap sort orders of block lists atomically.
-    *   [ ] Render Up/Down row reordering controls next to row headers on the Page Builder dashboard.
+    *   [ ] Add global progress loader markup and window hook scripts in `views/partials/header.ejs`.
+    *   [ ] Add button loading state triggers and CSS skeleton classes in `public/css/styles.css`.
 
 ---
 
 ## 🔍 Quality Assurance Tickets (QA) - Sprint 19
 
-### [TSK-QA-19.1] Default Homepage Seeding Audits
+### [TSK-QA-19.1] Row reorders and edit block audits
 *   **Assignee:** QA (Quality Assurance)
 *   **Status:** `[ ] Proposed`
+*   **Description:** Verify block edits and row-based reordering.
 *   **Action Items:**
-    *   [ ] Confirm default template gets seeded automatically when the blocks table is empty.
+    *   [ ] Verify block editing validates dimensions.
+    *   [ ] Verify row reordering swaps sorting orders atomically.
 
-### [TSK-QA-19.2] Global Loading States Visual Audits
+### [TSK-QA-19.2] Default layout seeds and loading states audits
 *   **Assignee:** QA (Quality Assurance)
 *   **Status:** `[ ] Proposed`
+*   **Description:** Verify database seeds and visual loading indicators.
 *   **Action Items:**
-    *   [ ] Confirm top loading progress bar triggers on clicks and forms block double clicks.
-
-### [TSK-QA-19.3] Banners Column Alignment & Group Audits
-*   **Assignee:** QA (Quality Assurance)
-*   **Status:** `[ ] Proposed`
-*   **Action Items:**
-    *   [ ] Confirm banners table columns render 6 cells matching head elements.
-    *   [ ] Assert group creation form rejects duplicate names and validates input text.
-
-### [TSK-QA-19.4] Page Builder Block Edit Verification
-*   **Assignee:** QA (Quality Assurance)
-*   **Status:** `[ ] Proposed`
-*   **Action Items:**
-    *   [ ] Attempt block updates verifying size validations and product SKU validation checks.
-
-### [TSK-QA-19.5] Row-Level Atomic Swap Verification
-*   **Assignee:** QA (Quality Assurance)
-*   **Status:** `[ ] Proposed`
-*   **Action Items:**
-    *   [ ] Trigger row swaps and confirm sorting sequence swaps atomically inside database transactions.
+    *   [ ] Verify empty block database triggers default layout seeding.
+    *   [ ] Verify progress bar renders on redirect, and buttons display spinners on submit.
 
 ---
 ---

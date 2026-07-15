@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
+  <div id="loading-bar"></div>
   <header>
     <div class="nav-container">
       <div class="logo">
@@ -76,6 +77,71 @@
           toggleBtn.classList.toggle('active');
         });
       }
+
+      // Page loader & button spinners transition interceptors
+      document.addEventListener('click', (e) => {
+        const anchor = e.target.closest('a');
+        if (!anchor) return;
+        
+        // Skip if modifier key pressed or default prevented
+        if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        
+        const href = anchor.getAttribute('href');
+        if (!href) return;
+        
+        // Skip external, hash, javascript links and blank targets
+        if (href.startsWith('#') || href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:') || anchor.target === '_blank') return;
+        
+        try {
+          const url = new URL(anchor.href, window.location.href);
+          if (url.origin !== window.location.origin) return;
+        } catch (err) {
+          return;
+        }
+        
+        const loadingBar = document.getElementById('loading-bar');
+        if (loadingBar) {
+          loadingBar.classList.remove('loaded');
+          loadingBar.classList.add('loading');
+        }
+        
+        if (anchor.classList.contains('btn') || anchor.classList.contains('btn-secondary') || anchor.classList.contains('btn-danger') || anchor.classList.contains('dropdown-logout-btn')) {
+          anchor.classList.add('btn-loading');
+          anchor.style.pointerEvents = 'none';
+        }
+      });
+
+      document.addEventListener('submit', (e) => {
+        const form = e.target;
+        if (e.defaultPrevented) return;
+        
+        const loadingBar = document.getElementById('loading-bar');
+        if (loadingBar) {
+          loadingBar.classList.remove('loaded');
+          loadingBar.classList.add('loading');
+        }
+        
+        const submitter = e.submitter || form.querySelector('button[type="submit"], input[type="submit"], .btn');
+        if (submitter) {
+          submitter.classList.add('btn-loading');
+          submitter.disabled = true;
+          // In case it's an anchor styled as a button
+          submitter.style.pointerEvents = 'none';
+        }
+      });
+
+      window.addEventListener('pageshow', (event) => {
+        const loadingBar = document.getElementById('loading-bar');
+        if (loadingBar) {
+          loadingBar.classList.remove('loading');
+          loadingBar.classList.add('loaded');
+          document.querySelectorAll('.btn-loading').forEach(btn => {
+            btn.classList.remove('btn-loading');
+            if (btn.disabled) btn.disabled = false;
+            btn.style.pointerEvents = '';
+          });
+        }
+      });
     });
   </script>
   <main>

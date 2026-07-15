@@ -272,7 +272,13 @@
         %>
         <% rows.forEach((row, rowIndex) => { %>
           <div class="visual-row">
-            <div class="visual-row-header">Row <%= rowIndex + 1 %> (Width sum: <%= row.reduce((sum, b) => sum + b.width, 0) %>/3)</div>
+            <div class="visual-row-header" style="display: flex; justify-content: space-between; align-items: center; padding: 0.25rem 1rem;">
+              <span>Row <%= rowIndex + 1 %> (Width sum: <%= row.reduce((sum, b) => sum + b.width, 0) %>/3)</span>
+              <div class="order-btns">
+                <button type="button" class="btn-order" onclick="reorderRows(<%= rowIndex %>, <%= rowIndex - 1 %>, <%= JSON.stringify(row.map(b => b.id)) %>, <%= rowIndex > 0 ? JSON.stringify(rows[rowIndex - 1].map(b => b.id)) : '[]' %>)" title="Move Row Up" <%= rowIndex === 0 ? 'disabled style="opacity: 0.3; cursor: not-allowed;"' : '' %>>▲</button>
+                <button type="button" class="btn-order" onclick="reorderRows(<%= rowIndex %>, <%= rowIndex + 1 %>, <%= JSON.stringify(row.map(b => b.id)) %>, <%= rowIndex < rows.length - 1 ? JSON.stringify(rows[rowIndex + 1].map(b => b.id)) : '[]' %>)" title="Move Row Down" <%= rowIndex === rows.length - 1 ? 'disabled style="opacity: 0.3; cursor: not-allowed;"' : '' %>>▼</button>
+              </div>
+            </div>
             <div class="visual-row-body">
               <% row.forEach((block, blockIndex) => { %>
                 <div class="visual-block-card block-width-<%= block.width %>">
@@ -310,7 +316,23 @@
                       <button type="button" class="btn-order" onclick="moveBlock(<%= block.id %>, 'up')" title="Move Up" <%= blockIndex === 0 && rowIndex === 0 ? 'disabled style="opacity: 0.3; cursor: not-allowed;"' : '' %>>▲</button>
                       <button type="button" class="btn-order" onclick="moveBlock(<%= block.id %>, 'down')" title="Move Down" <%= blockIndex === row.length - 1 && rowIndex === rows.length - 1 ? 'disabled style="opacity: 0.3; cursor: not-allowed;"' : '' %>>▼</button>
                     </div>
-                    <button type="button" class="btn btn-danger" style="padding: 0.35rem 0.75rem; font-size: 0.8rem; min-height: unset; height: 32px;" onclick="deleteBlock(<%= block.id %>)">Delete Block</button>
+                    <div style="display: flex; gap: 0.5rem;">
+                      <button type="button" class="btn btn-secondary btn-edit-block" style="padding: 0.35rem 0.75rem; font-size: 0.8rem; min-height: unset; height: 32px;"
+                              data-id="<%= block.id %>"
+                              data-type="<%= block.type %>"
+                              data-title="<%= block.title || '' %>"
+                              data-content="<%= block.content || '' %>"
+                              data-icon="<%= block.icon || '' %>"
+                              data-sku="<%= block.product_sku || '' %>"
+                              data-link="<%= block.link_url || '' %>"
+                              data-banner-group="<%= block.banner_group_id || '' %>"
+                              data-width="<%= block.width %>"
+                              data-height="<%= block.height %>"
+                              onclick="openEditModal(this)">
+                        Edit
+                      </button>
+                      <button type="button" class="btn btn-danger" style="padding: 0.35rem 0.75rem; font-size: 0.8rem; min-height: unset; height: 32px;" onclick="deleteBlock(<%= block.id %>)">Delete Block</button>
+                    </div>
                   </div>
                 </div>
               <% }) %>
@@ -393,6 +415,84 @@
         </div>
 
         <button type="submit" class="btn" style="width: 100%; margin-top: 1.5rem; font-size: 1rem;">Add Block to Grid Layout</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Block Modal -->
+  <div id="editBlockModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(15, 23, 42, 0.8); backdrop-filter: blur(4px);">
+    <div class="card-form" style="max-width: 600px; margin: 5% auto; position: relative; border: 1px solid var(--border-color); box-shadow: var(--shadow-lg);">
+      <span class="close-modal" onclick="closeEditModal()" style="position: absolute; right: 1.5rem; top: 1.5rem; font-size: 1.5rem; cursor: pointer; color: var(--text-secondary); transition: var(--transition-fast);">&times;</span>
+      <h3 style="margin-bottom: 1.5rem; font-size: 1.25rem; font-weight: 700; color: var(--text-primary);">Edit Homepage Layout Block</h3>
+      
+      <form id="editBlockForm" onsubmit="submitEditBlock(event)">
+        <input type="hidden" id="edit-id" name="id">
+        
+        <div class="form-group">
+          <label for="edit-type">Block Type</label>
+          <input type="text" id="edit-type-display" class="form-control" readonly style="opacity: 0.7; cursor: not-allowed;">
+          <input type="hidden" id="edit-type" name="type">
+        </div>
+
+        <div id="edit-group-title" class="form-group">
+          <label for="edit-title">Block Title / Header Text</label>
+          <input type="text" id="edit-title" name="title" class="form-control" placeholder="Enter header title text">
+        </div>
+
+        <div id="edit-group-content" class="form-group">
+          <label for="edit-content">Body Description Content</label>
+          <textarea id="edit-content" name="content" class="form-control" placeholder="Enter card body content details..." style="min-height: 80px;"></textarea>
+        </div>
+
+        <div id="edit-group-icon" class="form-group">
+          <label for="edit-icon">Display Icon / Emoji</label>
+          <input type="text" id="edit-icon" name="icon" class="form-control" placeholder="e.g. ✦ or 📦 or 🚚">
+        </div>
+
+        <div id="edit-group-sku" class="form-group" style="display: none;">
+          <label for="edit-product_sku">Select Showcase Product SKU *</label>
+          <select id="edit-product_sku" name="product_sku" class="form-control">
+            <option value="">-- Choose a Product --</option>
+            <% products.forEach(p => { %>
+              <option value="<%= p.sku %>"><%= p.sku %> - <%= p.item_name %></option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div id="edit-group-link" class="form-group" style="display: none;">
+          <label for="edit-link_url">Target Redirect Link URL</label>
+          <input type="text" id="edit-link_url" name="link_url" class="form-control" placeholder="e.g. /catalog or /catalog?type=Electronics">
+        </div>
+
+        <div id="edit-group-banner-group" class="form-group" style="display: none;">
+          <label for="edit-banner_group_id">Select Banner Carousel Group *</label>
+          <select id="edit-banner_group_id" name="banner_group_id" class="form-control">
+            <option value="">-- Choose a Banner Group --</option>
+            <% bannerGroups.forEach(g => { %>
+              <option value="<%= g.id %>"><%= g.group_name %> (<%= g.target_width %>x<%= g.target_height %>)</option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+          <div class="form-group">
+            <label for="edit-width">Grid Column Width Span *</label>
+            <select id="edit-width" name="width" class="form-control" required>
+              <option value="1">1 Column Span</option>
+              <option value="2">2 Columns Span</option>
+              <option value="3">3 Columns Span (Full Width)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="edit-height">Grid Row Height Span *</label>
+            <input type="number" id="edit-height" name="height" class="form-control" value="1" readonly>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+          <button type="submit" class="btn" style="flex: 1; font-size: 1rem;">Save Changes</button>
+          <button type="button" class="btn btn-secondary" onclick="closeEditModal()" style="flex: 1; font-size: 1rem;">Cancel</button>
+        </div>
       </form>
     </div>
   </div>
@@ -544,6 +644,175 @@
           window.location.reload();
         } else {
           alert('Error: ' + (result.error || `Failed to move block ${direction}`));
+        }
+      } catch (err) {
+        console.error(err);
+        alert('An unexpected error occurred.');
+      }
+    }
+
+    function openEditModal(button) {
+      const id = button.getAttribute('data-id');
+      const type = button.getAttribute('data-type');
+      const title = button.getAttribute('data-title');
+      const content = button.getAttribute('data-content');
+      const icon = button.getAttribute('data-icon');
+      const sku = button.getAttribute('data-sku');
+      const link = button.getAttribute('data-link');
+      const bannerGroup = button.getAttribute('data-banner-group');
+      const width = button.getAttribute('data-width');
+      const height = button.getAttribute('data-height');
+
+      document.getElementById('edit-id').value = id;
+      document.getElementById('edit-type').value = type;
+      document.getElementById('edit-type-display').value = type.replace('_', ' ').toUpperCase();
+      document.getElementById('edit-title').value = title;
+      document.getElementById('edit-content').value = content;
+      document.getElementById('edit-icon').value = icon;
+      document.getElementById('edit-product_sku').value = sku;
+      document.getElementById('edit-link_url').value = link;
+      document.getElementById('edit-banner_group_id').value = bannerGroup;
+      document.getElementById('edit-width').value = width;
+      document.getElementById('edit-height').value = height;
+
+      // Handle field visibility based on type
+      const groupTitle = document.getElementById('edit-group-title');
+      const groupContent = document.getElementById('edit-group-content');
+      const groupIcon = document.getElementById('edit-group-icon');
+      const groupSku = document.getElementById('edit-group-sku');
+      const groupLink = document.getElementById('edit-group-link');
+      const groupBannerGroup = document.getElementById('edit-group-banner-group');
+      const widthSelect = document.getElementById('edit-width');
+
+      groupTitle.style.display = 'none';
+      groupContent.style.display = 'none';
+      groupIcon.style.display = 'none';
+      groupSku.style.display = 'none';
+      groupLink.style.display = 'none';
+      groupBannerGroup.style.display = 'none';
+      Array.from(widthSelect.options).forEach(opt => opt.disabled = false);
+
+      if (type === 'info_card') {
+        groupTitle.style.display = 'flex';
+        groupContent.style.display = 'flex';
+        groupIcon.style.display = 'flex';
+        Array.from(widthSelect.options).forEach(opt => {
+          if (opt.value !== '1') opt.disabled = true;
+        });
+      } else if (type === 'catalog_card') {
+        groupSku.style.display = 'flex';
+        Array.from(widthSelect.options).forEach(opt => {
+          if (opt.value !== '1') opt.disabled = true;
+        });
+      } else if (type === 'title') {
+        groupTitle.style.display = 'flex';
+        Array.from(widthSelect.options).forEach(opt => {
+          if (opt.value !== '3') opt.disabled = true;
+        });
+      } else if (type === 'title_link') {
+        groupTitle.style.display = 'flex';
+        groupLink.style.display = 'flex';
+        Array.from(widthSelect.options).forEach(opt => {
+          if (opt.value !== '2' && opt.value !== '3') opt.disabled = true;
+        });
+      } else if (type === 'banner_group') {
+        groupBannerGroup.style.display = 'flex';
+        Array.from(widthSelect.options).forEach(opt => {
+          if (opt.value !== '3') opt.disabled = true;
+        });
+      }
+
+      document.getElementById('editBlockModal').style.display = 'block';
+    }
+
+    function closeEditModal() {
+      document.getElementById('editBlockModal').style.display = 'none';
+    }
+
+    window.addEventListener('click', (event) => {
+      const modal = document.getElementById('editBlockModal');
+      if (event.target === modal) {
+        closeEditModal();
+      }
+    });
+
+    async function submitEditBlock(event) {
+      event.preventDefault();
+      const id = document.getElementById('edit-id').value;
+      const type = document.getElementById('edit-type').value;
+      const title = document.getElementById('edit-title').value;
+      const content = document.getElementById('edit-content').value;
+      const icon = document.getElementById('edit-icon').value;
+      const product_sku = document.getElementById('edit-product_sku').value;
+      const link_url = document.getElementById('edit-link_url').value;
+      const banner_group_id = document.getElementById('edit-banner_group_id').value;
+      const width = document.getElementById('edit-width').value;
+      const height = document.getElementById('edit-height').value;
+
+      const data = {
+        type,
+        title,
+        content,
+        icon,
+        product_sku,
+        link_url,
+        banner_group_id,
+        width,
+        height,
+        _csrf: csrfToken
+      };
+
+      try {
+        const res = await fetch(`/ad-minpanel/page-builder/blocks/${id}/edit`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-csrf-token': csrfToken
+          },
+          body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        if (result.success) {
+          window.location.reload();
+        } else {
+          alert('Error: ' + (result.error || 'Failed to edit block'));
+        }
+      } catch (err) {
+        console.error(err);
+        alert('An unexpected error occurred.');
+      }
+    }
+
+    async function reorderRows(currentRowIndex, targetRowIndex, currentRowBlockIds, targetRowBlockIds) {
+      if (targetRowIndex < 0 || !targetRowBlockIds || targetRowBlockIds.length === 0) return;
+      
+      let row1BlockIds, row2BlockIds;
+      if (currentRowIndex > targetRowIndex) {
+        row1BlockIds = targetRowBlockIds;
+        row2BlockIds = currentRowBlockIds;
+      } else {
+        row1BlockIds = currentRowBlockIds;
+        row2BlockIds = targetRowBlockIds;
+      }
+
+      try {
+        const res = await fetch('/ad-minpanel/page-builder/rows/reorder', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-csrf-token': csrfToken
+          },
+          body: JSON.stringify({
+            row1BlockIds,
+            row2BlockIds,
+            _csrf: csrfToken
+          })
+        });
+        const result = await res.json();
+        if (result.success) {
+          window.location.reload();
+        } else {
+          alert('Error: ' + (result.error || 'Failed to reorder rows'));
         }
       } catch (err) {
         console.error(err);

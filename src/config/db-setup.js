@@ -338,6 +338,111 @@ async function setup() {
       console.log('Banners seeding completed successfully!');
     }
 
+    // Seed homepage_blocks if table is empty
+    const { rows: countBlockRows } = await db.query('SELECT COUNT(*) as count FROM homepage_blocks');
+    const blockCount = parseInt(countBlockRows[0].count, 10);
+    if (blockCount === 0) {
+      console.log('Seeding initial homepage blocks...');
+      const seedBlocks = [
+        // Row 1
+        {
+          type: 'banner_group',
+          title: 'Main Carousel',
+          banner_group_id: 1,
+          width: 3,
+          height: 1,
+          sort_order: 1
+        },
+        // Row 2
+        {
+          type: 'title',
+          title: 'Elevate Your Lifestyle',
+          width: 3,
+          height: 1,
+          sort_order: 2
+        },
+        // Row 3
+        {
+          type: 'info_card',
+          title: 'Curated Selection',
+          content: 'We source only high-quality items designed to elevate your everyday routines and spaces.',
+          icon: '✦',
+          width: 1,
+          height: 1,
+          sort_order: 3
+        },
+        {
+          type: 'info_card',
+          title: 'Swift Shipping',
+          content: 'Integrated directly with J&T API to calculate the most accurate, secure, and cost-effective shipping rates instantly.',
+          icon: '⚡',
+          width: 1,
+          height: 1,
+          sort_order: 4
+        },
+        {
+          type: 'info_card',
+          title: 'Secure Payments',
+          content: "Powered by Xendit's secure payment gateway. End-to-end encryption ensures your payment data never touches our local servers.",
+          icon: '🛡️',
+          width: 1,
+          height: 1,
+          sort_order: 5
+        },
+        // Row 4
+        {
+          type: 'title_link',
+          title: 'Explore Our Best Sellers',
+          link_url: '/catalog',
+          width: 3,
+          height: 1,
+          sort_order: 6
+        },
+        // Row 5
+        {
+          type: 'catalog_card',
+          product_sku: 'SKU-WALLET-01',
+          width: 1,
+          height: 1,
+          sort_order: 7
+        },
+        {
+          type: 'catalog_card',
+          product_sku: 'SKU-MOUSE-01',
+          width: 1,
+          height: 1,
+          sort_order: 8
+        },
+        {
+          type: 'catalog_card',
+          product_sku: 'SKU-BOTTLE-01',
+          width: 1,
+          height: 1,
+          sort_order: 9
+        }
+      ];
+
+      for (const block of seedBlocks) {
+        await db.query(
+          `INSERT INTO homepage_blocks (type, title, content, link_url, icon, product_sku, banner_group_id, width, height, sort_order)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+          [
+            block.type,
+            block.title || null,
+            block.content || null,
+            block.link_url || null,
+            block.icon || null,
+            block.product_sku || null,
+            block.banner_group_id || null,
+            block.width,
+            block.height,
+            block.sort_order
+          ]
+        );
+      }
+      console.log('Homepage blocks seeding completed successfully!');
+    }
+
     // Alter order_items columns if missing
     await db.query(`ALTER TABLE order_items ADD COLUMN IF NOT EXISTS sku VARCHAR(150)`);
     await db.query(`ALTER TABLE order_items ADD COLUMN IF NOT EXISTS weight INTEGER`);

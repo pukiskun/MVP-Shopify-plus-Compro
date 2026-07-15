@@ -499,4 +499,42 @@ router.post('/ad-minpanel/banners/:id/down', async (req, res) => {
   }
 });
 
+// POST: Create new banner group
+router.post('/ad-minpanel/banners/groups/new', async (req, res) => {
+  try {
+    const { group_name, target_width, target_height } = req.body;
+
+    if (!group_name || group_name.trim() === '') {
+      return res.redirect('/ad-minpanel/banners?error=' + encodeURIComponent('Group name is required.'));
+    }
+
+    const width = target_width && target_width.trim() !== '' ? parseInt(target_width, 10) : null;
+    const height = target_height && target_height.trim() !== '' ? parseInt(target_height, 10) : null;
+
+    if ((width !== null && isNaN(width)) || (height !== null && isNaN(height))) {
+      return res.redirect('/ad-minpanel/banners?error=' + encodeURIComponent('Width and height must be valid numbers.'));
+    }
+
+    // Insert into DB
+    await db.query(
+      'INSERT INTO banner_groups (group_name, target_width, target_height) VALUES ($1, $2, $3)',
+      [xss(group_name.trim()), width, height]
+    );
+
+    await logAdminAction(
+      process.env.ADMIN_USERNAME || 'admin',
+      'PRODUCT_CREATED',
+      `Banner group created: ${group_name.trim()} (${width || 'any'}x${height || 'any'})`
+    );
+
+    res.redirect('/ad-minpanel/banners?success=' + encodeURIComponent('Banner group created successfully!'));
+  } catch (error) {
+    console.error('Failed to create banner group:', error);
+    if (error.code === '23505') { // Unique constraint violation in Postgres
+      return res.redirect('/ad-minpanel/banners?error=' + encodeURIComponent('A banner group with this name already exists.'));
+    }
+    res.redirect('/ad-minpanel/banners?error=' + encodeURIComponent('Failed to create banner group.'));
+  }
+});
+
 module.exports = router;
