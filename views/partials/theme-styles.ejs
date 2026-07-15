@@ -1,0 +1,29 @@
+<% if (typeof themeSettings !== 'undefined' && themeSettings) { %>
+  <% if (themeSettings.theme_font_family) { %>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=<%= encodeURIComponent(themeSettings.theme_font_family) %>:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <% } %>
+  <style>
+    :root {
+      <% if (themeSettings.theme_bg_primary) { %>
+        --bg-primary: <%= themeSettings.theme_bg_primary %>;
+      <% } %>
+      <% if (themeSettings.theme_bg_secondary) { %>
+        --bg-secondary: <%= themeSettings.theme_bg_secondary %>;
+      <% } %>
+      <% if (themeSettings.theme_text_primary) { %>
+        --text-primary: <%= themeSettings.theme_text_primary %>;
+      <% } %>
+      <% if (themeSettings.theme_accent_primary) { %>
+        --accent-primary: <%= themeSettings.theme_accent_primary %>;
+      <% } %>
+      <% if (themeSettings.theme_font_family) { %>
+        --font-sans: '<%= themeSettings.theme_font_family %>', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      <% } %>
+      <% if (themeSettings.theme_border_radius) { %>
+        --radius-md: <%= themeSettings.theme_border_radius %>;
+      <% } %>
+    }
+  </style>
+<% } %>
