@@ -281,10 +281,13 @@
             </div>
             <div class="visual-row-body">
               <% row.forEach((block, blockIndex) => { %>
-                <div class="visual-block-card block-width-<%= block.width %>">
+                <div class="visual-block-card block-width-<%= block.width %>" data-id="<%= block.id %>">
                   <div>
                     <div class="block-card-header">
-                      <span class="block-type-badge"><%= block.type.replace('_', ' ') %></span>
+                      <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span class="grab-handle">⋮⋮</span>
+                        <span class="block-type-badge"><%= block.type.replace('_', ' ') %></span>
+                      </div>
                       <span class="block-size-badge"><%= block.width %>x<%= block.height %></span>
                     </div>
                     
@@ -497,6 +500,7 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
   <script>
     const csrfToken = "<%= csrfToken %>";
 
@@ -820,9 +824,50 @@
       }
     }
 
-    // Initialize visibility on load
+    // Initialize visibility and SortableJS on load
     document.addEventListener('DOMContentLoaded', () => {
       handleTypeChange();
+
+      if (typeof Sortable !== 'undefined') {
+        const containers = document.querySelectorAll('.visual-row-body');
+        containers.forEach(container => {
+          new Sortable(container, {
+            group: 'blocks-grid',
+            handle: '.grab-handle',
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            chosenClass: 'sortable-chosen',
+            onEnd: async function () {
+              const blockIds = Array.from(document.querySelectorAll('.visual-block-card'))
+                .map(el => el.getAttribute('data-id'))
+                .filter(id => id !== null);
+
+              try {
+                const res = await fetch('/ad-minpanel/page-builder/blocks/reorder-all', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'x-csrf-token': csrfToken
+                  },
+                  body: JSON.stringify({
+                    blockIds,
+                    _csrf: csrfToken
+                  })
+                });
+                const result = await res.json();
+                if (result.success) {
+                  window.location.reload();
+                } else {
+                  alert('Error reordering blocks: ' + (result.error || 'Failed to update order'));
+                }
+              } catch (err) {
+                console.error(err);
+                alert('An unexpected error occurred while reordering.');
+              }
+            }
+          });
+        });
+      }
     });
   </script>
 </body>

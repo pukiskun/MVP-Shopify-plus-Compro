@@ -13,9 +13,9 @@ Implement an interactive drag-and-drop reordering system in the Homepage Page Bu
 
 | Task ID | Assignee | Task Description | Status |
 | :--- | :--- | :--- | :--- |
-| **[TSK-DEV-20.1]** | DEV | [Bulk Reorder API Endpoint](#tsk-dev-201-bulk-reorder-api-endpoint) | `[ ] Proposed` |
-| **[TSK-DEV-20.2]** | DEV | [Drag-and-Drop EJS Interface with SortableJS](#tsk-dev-202-drag-and-drop-ejs-interface-with-sortablejs) | `[ ] Proposed` |
-| **[TSK-QA-20.1]** | QA | [Drag-and-Drop Sequence Audits](#tsk-qa-201-drag-and-drop-sequence-audits) | `[ ] Proposed` |
+| **[TSK-DEV-20.1]** | DEV | [Bulk Reorder API Endpoint](#tsk-dev-201-bulk-reorder-api-endpoint) | `[x] Done` |
+| **[TSK-DEV-20.2]** | DEV | [Drag-and-Drop EJS Interface with SortableJS](#tsk-dev-202-drag-and-drop-ejs-interface-with-sortablejs) | `[x] Done` |
+| **[TSK-QA-20.1]** | QA | [Drag-and-Drop Sequence Audits](#tsk-qa-201-drag-and-drop-sequence-audits) | `[x] Done` |
 
 ---
 
@@ -23,19 +23,19 @@ Implement an interactive drag-and-drop reordering system in the Homepage Page Bu
 
 ### [TSK-DEV-20.1] Bulk Reorder API Endpoint
 *   **Assignee:** DEV (Fullstack Developer)
-*   **Status:** `[ ] Proposed`
+*   **Status:** `[x] Done`
 *   **Description:** Create a backend API endpoint to update all block sort orders atomically in a single transaction.
 *   **Action Items:**
-    *   [ ] In `src/routes/adminPageBuilder.js`, implement `POST /ad-minpanel/page-builder/blocks/reorder-all` accepting an array of block IDs.
+    *   [x] In `src/routes/adminPageBuilder.js`, implement `POST /ad-minpanel/page-builder/blocks/reorder-all` accepting an array of block IDs.
 
 ### [TSK-DEV-20.2] Drag-and-Drop EJS Interface with SortableJS
 *   **Assignee:** DEV (Fullstack Developer)
-*   **Status:** `[ ] Proposed`
+*   **Status:** `[x] Done`
 *   **Description:** Integrate SortableJS in the admin page builder panel, add drag grab handles, and bind AJAX reorder callbacks.
 *   **Action Items:**
-    *   [ ] Inject SortableJS CDN script in `views/admin/page-builder.ejs`.
-    *   [ ] Define drag handles and drop placeholder CSS styling in `public/css/styles.css`.
-    *   [ ] Bind SortableJS event listener to EJS layout wrapper, sending bulk reorder POST request on drag completion.
+    *   [x] Inject SortableJS CDN script in `views/admin/page-builder.ejs`.
+    *   [x] Define drag handles and drop placeholder CSS styling in `public/css/styles.css`.
+    *   [x] Bind SortableJS event listener to EJS layout wrapper, sending bulk reorder POST request on drag completion.
 
 ---
 
@@ -43,11 +43,11 @@ Implement an interactive drag-and-drop reordering system in the Homepage Page Bu
 
 ### [TSK-QA-20.1] Drag-and-Drop Sequence Audits
 *   **Assignee:** QA (Quality Assurance)
-*   **Status:** `[ ] Proposed`
+*   **Status:** `[x] Done`
 *   **Description:** Verify bulk order swaps and AJAX callbacks.
 *   **Action Items:**
-    *   [ ] Assert bulk reorder API updates sort orders atomically in a transaction.
-    *   [ ] Verify drag-and-drop actions trigger successful reorder callbacks and persist layouts on refresh.
+    *   [x] Assert bulk reorder API updates sort orders atomically in a transaction.
+    *   [x] Verify drag-and-drop actions trigger successful reorder callbacks and persist layouts on refresh.
 
 ---
 ---

@@ -383,6 +383,47 @@ router.post('/ad-minpanel/page-builder/blocks/:id/edit', async (req, res) => {
   }
 });
 
+// POST: Reorder all blocks sequentially
+router.post('/ad-minpanel/page-builder/blocks/reorder-all', async (req, res) => {
+  const { blockIds } = req.body;
+
+  if (!Array.isArray(blockIds) || blockIds.length === 0) {
+    return res.status(400).json({ error: 'Invalid or missing block IDs.' });
+  }
+
+  const parsedIds = blockIds.map(id => parseInt(id, 10));
+  if (parsedIds.some(isNaN)) {
+    return res.status(400).json({ error: 'Block IDs must be valid integers.' });
+  }
+
+  const client = await db.pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // Update each block's sort_order to its index (1-based) in the parsedIds array
+    for (let i = 0; i < parsedIds.length; i++) {
+      const blockId = parsedIds[i];
+      const newSortOrder = i + 1;
+      await client.query(
+        'UPDATE homepage_blocks SET sort_order = $1 WHERE id = $2',
+        [newSortOrder, blockId]
+      );
+    }
+
+    await client.query('COMMIT');
+    res.json({
+      success: true,
+      message: 'All blocks reordered successfully.'
+    });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Failed to reorder all blocks:', error);
+    res.status(500).json({ error: 'Failed to reorder all blocks.' });
+  } finally {
+    client.release();
+  }
+});
+
 // POST: Reorder rows by swapping blocks of two rows
 router.post('/ad-minpanel/page-builder/rows/reorder', async (req, res) => {
   const { row1BlockIds, row2BlockIds } = req.body;
