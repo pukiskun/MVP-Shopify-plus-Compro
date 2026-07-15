@@ -4,7 +4,7 @@ Welcome PM, DEV, and QA! This board serves as our shared JIRA-like tracker for a
 
 ---
 
-# 🚀 Sprint 22: Performance Boost & Security Hardening (Proposed)
+# 🚀 Sprint 22: Performance Boost & Security Hardening (Active)
 
 ## Sprint 22 Goal
 Optimize storefront page loading performance (gzip, browser caching, dynamic WebP image conversions, SQL database indexing lookups) and harden application layer security parameters (Helmet headers, HPP parameter pollution protection, and secure session cookie naming).
