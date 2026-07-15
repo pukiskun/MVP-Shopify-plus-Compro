@@ -4,6 +4,9 @@ migrateEnvPassword();
 const express = require('express');
 const session = require('express-session');
 const path = require('path');
+const compression = require('compression');
+const helmet = require('helmet');
+const hpp = require('hpp');
 
 // Route Imports
 const pagesRouter = require('./routes/pages');
@@ -24,10 +27,30 @@ const themeCache = require('./utils/themeCache');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Setup EJS views and static directory
+// Setup Helmet security headers with CSP whitelists allowing CDNs
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      imgSrc: ["'self'", "data:", "https://via.placeholder.com", "https://*.placeholder.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      connectSrc: ["'self'"],
+      upgradeInsecureRequests: [],
+    },
+  },
+}));
+
+// Register compression middleware before routing and static assets
+app.use(compression());
+
+// Setup EJS views and static directory with 1 year max-age browser caching headers
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, '../views'));
-app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.static(path.join(__dirname, '../public'), {
+  maxAge: 31536000000 // 1 year in milliseconds
+}));
 
 // Middleware for parsing requests
 app.set('trust proxy', 1);
@@ -35,24 +58,28 @@ app.set('trust proxy', 1);
 // Middleware for parsing requests
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(hpp());
 
 const pgSession = require('connect-pg-simple')(session);
 const db = require('./config/db');
 
 // Secure Session management for shopping cart
+const isProd = process.env.NODE_ENV === 'production';
+
 app.use(session({
   store: new pgSession({
     pool: db.pool,
     tableName: 'session'
   }),
-  name: 'shopify_session', // Avoid default 'connect.sid' to make scanning slightly harder
+  name: isProd ? '__Host-mvp-session' : 'shopify_session', // Use Host prefix only in production HTTPS
   secret: process.env.SESSION_SECRET || 'dev_fallback_secret_key_98765',
   resave: false,
   saveUninitialized: true,
   cookie: {
     httpOnly: true, // Prevents client-side scripts from reading session cookie (XSS protection)
-    secure: process.env.NODE_ENV === 'production',  // Set to true in production if serving over HTTPS
+    secure: isProd,  // Set to true in production if serving over HTTPS
     sameSite: 'lax',
+    path: '/',      // Must be '/' for __Host- cookie
     maxAge: 1000 * 60 * 60 * 24 // 24 hours
   }
 }));

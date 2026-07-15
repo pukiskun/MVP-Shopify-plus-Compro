@@ -7,6 +7,7 @@ const { body, validationResult } = require('express-validator');
 const xss = require('xss');
 const { requireAdmin } = require('../middleware/auth');
 const { logAdminAction } = require('../utils/auditLogger');
+const sharp = require('sharp');
 
 const router = express.Router();
 
@@ -189,9 +190,7 @@ router.post('/ad-minpanel/products/new', handleUpload, [
   const stock = parseInt(formData.stock, 10);
   
   let imageUrl = formData.image_url || 'https://via.placeholder.com/800x800/1e293b/ffffff?text=Product+Photo';
-  if (req.file) {
-    imageUrl = `/uploads/${req.file.filename}`;
-  }
+  let createdWebpPath = null;
 
   try {
     // Check SKU uniqueness
@@ -206,6 +205,30 @@ router.post('/ad-minpanel/products/new', handleUpload, [
         product: formData,
         errors: ['SKU must be unique. A product with this SKU already exists.']
       });
+    }
+
+    if (req.file) {
+      const rawPath = req.file.path;
+      const webpFilename = path.parse(req.file.filename).name + '.webp';
+      const webpPath = path.join(uploadDir, webpFilename);
+      
+      try {
+        await sharp(rawPath)
+          .webp({ quality: 80 })
+          .toFile(webpPath);
+        createdWebpPath = webpPath;
+        imageUrl = `/uploads/${webpFilename}`;
+        fs.unlink(rawPath, () => {});
+      } catch (sharpError) {
+        console.error('[Error] WebP conversion failed:', sharpError);
+        fs.unlink(rawPath, () => {});
+        return res.render('admin/product-form', {
+          title: 'Add New Catalog Product',
+          isEdit: false,
+          product: formData,
+          errors: [`WebP Image conversion failed: ${sharpError.message}`]
+        });
+      }
     }
 
     // Security Action: Parameterized prepared statement prevents SQL Injection (SQLi)
@@ -230,6 +253,9 @@ router.post('/ad-minpanel/products/new', handleUpload, [
     console.error('[Error] Product creation failed:', error);
     if (req.file) {
       fs.unlink(req.file.path, () => {});
+    }
+    if (createdWebpPath) {
+      fs.unlink(createdWebpPath, () => {});
     }
     res.render('admin/product-form', {
       title: 'Add New Catalog Product',
@@ -345,9 +371,7 @@ router.post('/ad-minpanel/products/edit/:id', handleUpload, [
   const stock = parseInt(formData.stock, 10);
   
   let imageUrl = formData.image_url || 'https://via.placeholder.com/800x800/1e293b/ffffff?text=Product+Photo';
-  if (req.file) {
-    imageUrl = `/uploads/${req.file.filename}`;
-  }
+  let createdWebpPath = null;
 
   try {
     // Check SKU uniqueness
@@ -364,6 +388,30 @@ router.post('/ad-minpanel/products/edit/:id', handleUpload, [
       });
     }
 
+    if (req.file) {
+      const rawPath = req.file.path;
+      const webpFilename = path.parse(req.file.filename).name + '.webp';
+      const webpPath = path.join(uploadDir, webpFilename);
+      
+      try {
+        await sharp(rawPath)
+          .webp({ quality: 80 })
+          .toFile(webpPath);
+        createdWebpPath = webpPath;
+        imageUrl = `/uploads/${webpFilename}`;
+        fs.unlink(rawPath, () => {});
+      } catch (sharpError) {
+        console.error('[Error] WebP conversion failed:', sharpError);
+        fs.unlink(rawPath, () => {});
+        return res.render('admin/product-form', {
+          title: `Edit: ${formData.item_name}`,
+          isEdit: true,
+          product: formData,
+          errors: [`WebP Image conversion failed: ${sharpError.message}`]
+        });
+      }
+    }
+
     // Security Action: Parameterized prepared statement prevents SQLi
     const result = await db.query(`
       UPDATE products
@@ -374,6 +422,9 @@ router.post('/ad-minpanel/products/edit/:id', handleUpload, [
     if (result.rowCount === 0) {
       if (req.file) {
         fs.unlink(req.file.path, () => {});
+      }
+      if (createdWebpPath) {
+        fs.unlink(createdWebpPath, () => {});
       }
       return res.status(404).send('Product not found.');
     }
@@ -392,6 +443,9 @@ router.post('/ad-minpanel/products/edit/:id', handleUpload, [
     console.error('[Error] Product update failed:', error);
     if (req.file) {
       fs.unlink(req.file.path, () => {});
+    }
+    if (createdWebpPath) {
+      fs.unlink(createdWebpPath, () => {});
     }
     res.render('admin/product-form', {
       title: `Edit: ${formData.item_name}`,

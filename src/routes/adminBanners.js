@@ -7,6 +7,7 @@ const { imageSize: sizeOf } = require('image-size');
 const { requireAdmin } = require('../middleware/auth');
 const { logAdminAction } = require('../utils/auditLogger');
 const xss = require('xss');
+const sharp = require('sharp');
 
 const router = express.Router();
 
@@ -163,8 +164,32 @@ router.post('/ad-minpanel/banners/create', (req, res) => {
     }
 
     // Save banner
+    let createdWebpPath = null;
+    let imageUrl = file ? `/uploads/${file.filename}` : null;
+
+    if (file) {
+      try {
+        const webpFilename = path.parse(file.filename).name + '.webp';
+        const webpPath = path.join(uploadDir, webpFilename);
+        
+        await sharp(filePath)
+          .webp({ quality: 80 })
+          .toFile(webpPath);
+        
+        createdWebpPath = webpPath;
+        imageUrl = `/uploads/${webpFilename}`;
+        fs.unlinkSync(filePath);
+        filePath = null; // Marked as deleted
+      } catch (sharpError) {
+        console.error('[Error] WebP conversion failed:', sharpError);
+        if (filePath && fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+        return res.redirect(`/ad-minpanel/banners?error=${encodeURIComponent('WebP Image conversion failed: ' + sharpError.message)}`);
+      }
+    }
+
     try {
-      const imageUrl = `/uploads/${file.filename}`;
       let sortOrder = 1;
 
       if (position === 'first') {
@@ -207,6 +232,9 @@ router.post('/ad-minpanel/banners/create', (req, res) => {
       console.error('Failed to create banner:', dbErr);
       if (filePath && fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
+      }
+      if (createdWebpPath && fs.existsSync(createdWebpPath)) {
+        fs.unlinkSync(createdWebpPath);
       }
       res.redirect('/ad-minpanel/banners?error=' + encodeURIComponent('Database error while saving banner.'));
     }
@@ -313,18 +341,38 @@ router.post('/ad-minpanel/banners/:id/edit', (req, res) => {
       return res.redirect(`/ad-minpanel/banners?edit=${bannerId}&error=${encodeURIComponent(errorMsg)}`);
     }
 
-    try {
-      let imageUrl = existingBanner.image_url;
-      let oldImageFileToDelete = null;
+    let createdWebpPath = null;
+    let imageUrl = existingBanner.image_url;
+    let oldImageFileToDelete = null;
 
-      if (file) {
-        imageUrl = `/uploads/${file.filename}`;
+    if (file) {
+      try {
+        const webpFilename = path.parse(file.filename).name + '.webp';
+        const webpPath = path.join(uploadDir, webpFilename);
+        
+        await sharp(filePath)
+          .webp({ quality: 80 })
+          .toFile(webpPath);
+        
+        createdWebpPath = webpPath;
+        imageUrl = `/uploads/${webpFilename}`;
         // Mark old local file for deletion
         if (existingBanner.image_url.startsWith('/uploads/')) {
           oldImageFileToDelete = path.join(__dirname, '../../public', existingBanner.image_url);
         }
+        // Clean raw file immediately
+        fs.unlinkSync(filePath);
+        filePath = null; // Marked as deleted
+      } catch (sharpError) {
+        console.error('[Error] WebP conversion failed:', sharpError);
+        if (filePath && fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+        return res.redirect(`/ad-minpanel/banners?edit=${bannerId}&error=${encodeURIComponent('WebP Image conversion failed: ' + sharpError.message)}`);
       }
+    }
 
+    try {
       // Handle position changes if needed
       let sortOrder = existingBanner.sort_order;
       if (position && position !== 'current') {
@@ -394,6 +442,9 @@ router.post('/ad-minpanel/banners/:id/edit', (req, res) => {
       console.error('Failed to update banner:', dbErr);
       if (filePath && fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
+      }
+      if (createdWebpPath && fs.existsSync(createdWebpPath)) {
+        fs.unlinkSync(createdWebpPath);
       }
       res.redirect(`/ad-minpanel/banners?edit=${bannerId}&error=${encodeURIComponent('Database error updating banner.')}`);
     }

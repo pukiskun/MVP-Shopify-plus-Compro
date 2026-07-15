@@ -37,6 +37,7 @@ async function setup() {
     `);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_products_item_name ON products(item_name);`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_products_price ON products(price);`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_products_sku ON products(sku);`);
 
     await db.query(`
       CREATE TABLE IF NOT EXISTS orders (
@@ -55,6 +56,7 @@ async function setup() {
     `);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_orders_uuid ON orders(order_uuid);`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_orders_customer_id ON orders(customer_id);`);
 
     await db.query(`
       CREATE TABLE IF NOT EXISTS order_items (
@@ -238,6 +240,12 @@ async function setup() {
     // Alter orders table to add status column if it was created without it
     await db.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS status VARCHAR(50) NOT NULL DEFAULT 'PENDING' CHECK(status IN ('PENDING', 'PAID', 'SHIPPED', 'DELIVERED', 'CANCELLED'))`);
     await db.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_id INTEGER REFERENCES customers(id) ON DELETE SET NULL`);
+
+    // Ensure all required B-Tree indexes exist
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_products_sku ON products(sku);`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_orders_customer_id ON orders(customer_id);`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_orders_uuid ON orders(order_uuid);`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_homepage_blocks_sort_order ON homepage_blocks(sort_order);`);
 
     // Seed products if table is empty
     const { rows: countRows } = await db.query('SELECT COUNT(*) as count FROM products');
