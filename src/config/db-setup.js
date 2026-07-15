@@ -162,6 +162,29 @@ async function setup() {
     `);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_homepage_blocks_sort_order ON homepage_blocks(sort_order);`);
 
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS site_settings (
+        key VARCHAR(255) PRIMARY KEY,
+        value TEXT NOT NULL
+      );
+    `);
+
+    const defaultThemeSettings = [
+      { key: 'theme_bg_primary', value: '#0f172a' },
+      { key: 'theme_bg_secondary', value: '#1e293b' },
+      { key: 'theme_text_primary', value: '#f8fafc' },
+      { key: 'theme_accent_primary', value: '#10b981' },
+      { key: 'theme_font_family', value: 'Outfit' },
+      { key: 'theme_border_radius', value: '12px' }
+    ];
+
+    for (const setting of defaultThemeSettings) {
+      await db.query(
+        `INSERT INTO site_settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO NOTHING`,
+        [setting.key, setting.value]
+      );
+    }
+
     // Migrate existing banners table if needed
     const checkBannersGroupId = await db.query(`
       SELECT column_name 

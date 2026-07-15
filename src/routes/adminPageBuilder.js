@@ -2,6 +2,7 @@ const express = require('express');
 const db = require('../config/db');
 const { requireAdmin } = require('../middleware/auth');
 const xss = require('xss');
+const themeCache = require('../utils/themeCache');
 
 const router = express.Router();
 
@@ -480,6 +481,77 @@ router.post('/ad-minpanel/page-builder/rows/reorder', async (req, res) => {
     await client.query('ROLLBACK');
     console.error('Failed to reorder rows:', error);
     res.status(500).json({ error: 'Failed to reorder rows.' });
+  } finally {
+    client.release();
+  }
+});
+
+// POST: Save Theme Settings
+router.post('/ad-minpanel/page-builder/theme/save', async (req, res) => {
+  const {
+    theme_bg_primary,
+    theme_bg_secondary,
+    theme_text_primary,
+    theme_accent_primary,
+    theme_font_family,
+    theme_border_radius
+  } = req.body;
+
+  const hexRegex = /^#[0-9A-Fa-f]{6}$|^#[0-9A-Fa-f]{3}$/;
+
+  if (!theme_bg_primary || !theme_bg_secondary || !theme_text_primary || !theme_accent_primary || !theme_font_family || !theme_border_radius) {
+    return res.redirect('/ad-minpanel/page-builder?error=All+theme+fields+are+required.');
+  }
+
+  if (!hexRegex.test(theme_bg_primary) || 
+      !hexRegex.test(theme_bg_secondary) || 
+      !hexRegex.test(theme_text_primary) || 
+      !hexRegex.test(theme_accent_primary)) {
+    return res.redirect('/ad-minpanel/page-builder?error=Invalid+color+format.+Colors+must+be+valid+hex+codes.');
+  }
+
+  const allowedFonts = ['Outfit', 'Inter', 'Roboto', 'Poppins', 'Open Sans', 'Lora', 'Playfair Display'];
+  if (!allowedFonts.includes(theme_font_family)) {
+    return res.redirect('/ad-minpanel/page-builder?error=Invalid+font+family+selected.');
+  }
+
+  const allowedRadius = ['4px', '8px', '12px', '16px', '20px'];
+  if (!allowedRadius.includes(theme_border_radius)) {
+    return res.redirect('/ad-minpanel/page-builder?error=Invalid+border+radius+selected.');
+  }
+
+  const client = await db.pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const settings = [
+      { key: 'theme_bg_primary', value: theme_bg_primary },
+      { key: 'theme_bg_secondary', value: theme_bg_secondary },
+      { key: 'theme_text_primary', value: theme_text_primary },
+      { key: 'theme_accent_primary', value: theme_accent_primary },
+      { key: 'theme_font_family', value: theme_font_family },
+      { key: 'theme_border_radius', value: theme_border_radius }
+    ];
+
+    for (const setting of settings) {
+      await client.query(`
+        INSERT INTO site_settings (key, value) 
+        VALUES ($1, $2) 
+        ON CONFLICT (key) 
+        DO UPDATE SET value = $2
+      `, [setting.key, setting.value]);
+    }
+
+    await client.query('COMMIT');
+    
+    // Refresh memory cache
+    await themeCache.refresh();
+
+    res.redirect('/ad-minpanel/page-builder?success=Theme+settings+updated+successfully.');
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Failed to save theme settings:', error);
+    res.redirect('/ad-minpanel/page-builder?error=Failed+to+save+theme+settings.');
   } finally {
     client.release();
   }

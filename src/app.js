@@ -19,6 +19,7 @@ const adminReportingRouter = require('./routes/adminReporting');
 const customerAuthRouter = require('./routes/customerAuth');
 const customerInvoiceRouter = require('./routes/customerInvoice');
 const { cleanAbandonedCheckouts } = require('./utils/abandonedCheckoutCleaner');
+const themeCache = require('./utils/themeCache');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -60,9 +61,10 @@ app.use(session({
 const { setup } = require('./config/db-setup');
 let dbInitialized = false;
 const dbSetupPromise = setup()
-  .then(() => {
+  .then(async () => {
     dbInitialized = true;
     console.log('[System] Database initialization and migrations completed successfully.');
+    await themeCache.refresh();
   })
   .catch((err) => {
     console.error('[System Error] Database migration failed:', err);
@@ -87,6 +89,9 @@ app.use((req, res, next) => {
   // Make customer variables available to all EJS views
   res.locals.customerId = req.session.customerId || null;
   res.locals.customerName = req.session.customerName || null;
+  
+  // Set themeSettings for all views
+  res.locals.themeSettings = themeCache.get();
   
   next();
 });

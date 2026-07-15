@@ -245,7 +245,14 @@
       <div class="alert alert-success"><%= success %></div>
     <% } %>
 
-    <h3 style="margin-bottom: 1rem; font-size: 1.25rem; font-weight: 600;">Active Layout Grid</h3>
+    <!-- Tabs Container -->
+    <div class="tabs-container" style="display: flex; gap: 1rem; border-bottom: 1px solid var(--border-color); margin-bottom: 2rem; padding-bottom: 0.5rem;">
+      <button type="button" id="tab-layout-btn" class="tab-btn active" onclick="switchTab('layout')" style="background: none; border: none; color: var(--text-primary); font-size: 1rem; font-weight: 600; padding: 0.5rem 1rem; cursor: pointer; border-bottom: 2px solid var(--accent-primary); transition: var(--transition-fast);">Homepage Layout Grid</button>
+      <button type="button" id="tab-theme-btn" class="tab-btn" onclick="switchTab('theme')" style="background: none; border: none; color: var(--text-secondary); font-size: 1rem; font-weight: 500; padding: 0.5rem 1rem; cursor: pointer; transition: var(--transition-fast);">Theme Customizer</button>
+    </div>
+
+    <div id="tab-layout-content">
+      <h3 style="margin-bottom: 1rem; font-size: 1.25rem; font-weight: 600;">Active Layout Grid</h3>
     
     <div class="block-rows-container">
       <% if (blocks.length === 0) { %>
@@ -420,7 +427,94 @@
         <button type="submit" class="btn" style="width: 100%; margin-top: 1.5rem; font-size: 1rem;">Add Block to Grid Layout</button>
       </form>
     </div>
+  </div> <!-- end of tab-layout-content -->
+
+  <!-- Theme Customizer Tab Content -->
+  <div id="tab-theme-content" style="display: none;">
+    <div class="card-form" style="margin-top: 0;">
+      <h3 style="margin-bottom: 1.5rem; font-size: 1.25rem; font-weight: 700;">Theme Customizer</h3>
+      <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 2rem;">Adjust the global storefront colors, typography, and border radius properties.</p>
+      
+      <form action="/ad-minpanel/page-builder/theme/save" method="POST">
+        <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+          <!-- Background Primary -->
+          <div class="form-group">
+            <label for="theme_bg_primary">Primary Background Color *</label>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <input type="color" id="theme_bg_primary" name="theme_bg_primary" value="<%= (typeof themeSettings !== 'undefined' && themeSettings.theme_bg_primary) || '#0f172a' %>" style="width: 50px; height: 42px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 2px; cursor: pointer; background: none;" oninput="document.getElementById('theme_bg_primary_text').value = this.value">
+              <input type="text" id="theme_bg_primary_text" class="form-control" value="<%= (typeof themeSettings !== 'undefined' && themeSettings.theme_bg_primary) || '#0f172a' %>" placeholder="#0f172a" style="max-width: 120px;" oninput="if(/^#[0-9A-Fa-f]{6}$|^#[0-9A-Fa-f]{3}$/.test(this.value)) { document.getElementById('theme_bg_primary').value = this.value }">
+            </div>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Main page background color (default: #0f172a)</span>
+          </div>
+
+          <!-- Background Secondary -->
+          <div class="form-group">
+            <label for="theme_bg_secondary">Secondary Background Color *</label>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <input type="color" id="theme_bg_secondary" name="theme_bg_secondary" value="<%= (typeof themeSettings !== 'undefined' && themeSettings.theme_bg_secondary) || '#1e293b' %>" style="width: 50px; height: 42px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 2px; cursor: pointer; background: none;" oninput="document.getElementById('theme_bg_secondary_text').value = this.value">
+              <input type="text" id="theme_bg_secondary_text" class="form-control" value="<%= (typeof themeSettings !== 'undefined' && themeSettings.theme_bg_secondary) || '#1e293b' %>" placeholder="#1e293b" style="max-width: 120px;" oninput="if(/^#[0-9A-Fa-f]{6}$|^#[0-9A-Fa-f]{3}$/.test(this.value)) { document.getElementById('theme_bg_secondary').value = this.value }">
+            </div>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Cards and navigation background color (default: #1e293b)</span>
+          </div>
+
+          <!-- Text Primary -->
+          <div class="form-group">
+            <label for="theme_text_primary">Primary Text Color *</label>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <input type="color" id="theme_text_primary" name="theme_text_primary" value="<%= (typeof themeSettings !== 'undefined' && themeSettings.theme_text_primary) || '#f8fafc' %>" style="width: 50px; height: 42px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 2px; cursor: pointer; background: none;" oninput="document.getElementById('theme_text_primary_text').value = this.value">
+              <input type="text" id="theme_text_primary_text" class="form-control" value="<%= (typeof themeSettings !== 'undefined' && themeSettings.theme_text_primary) || '#f8fafc' %>" placeholder="#f8fafc" style="max-width: 120px;" oninput="if(/^#[0-9A-Fa-f]{6}$|^#[0-9A-Fa-f]{3}$/.test(this.value)) { document.getElementById('theme_text_primary').value = this.value }">
+            </div>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Main readable body text color (default: #f8fafc)</span>
+          </div>
+
+          <!-- Accent Primary -->
+          <div class="form-group">
+            <label for="theme_accent_primary">Accent Primary Color *</label>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <input type="color" id="theme_accent_primary" name="theme_accent_primary" value="<%= (typeof themeSettings !== 'undefined' && themeSettings.theme_accent_primary) || '#10b981' %>" style="width: 50px; height: 42px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 2px; cursor: pointer; background: none;" oninput="document.getElementById('theme_accent_primary_text').value = this.value">
+              <input type="text" id="theme_accent_primary_text" class="form-control" value="<%= (typeof themeSettings !== 'undefined' && themeSettings.theme_accent_primary) || '#10b981' %>" placeholder="#10b981" style="max-width: 120px;" oninput="if(/^#[0-9A-Fa-f]{6}$|^#[0-9A-Fa-f]{3}$/.test(this.value)) { document.getElementById('theme_accent_primary').value = this.value }">
+            </div>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Theme accent highlights, links, and buttons (default: #10b981)</span>
+          </div>
+
+          <!-- Font Family -->
+          <div class="form-group">
+            <label for="theme_font_family">Font Family *</label>
+            <select id="theme_font_family" name="theme_font_family" class="form-control" required>
+              <% 
+                const currentFont = (typeof themeSettings !== 'undefined' && themeSettings.theme_font_family) || 'Outfit';
+                const fonts = ['Outfit', 'Inter', 'Roboto', 'Poppins', 'Open Sans', 'Lora', 'Playfair Display'];
+                fonts.forEach(font => { 
+              %>
+                <option value="<%= font %>" <%= currentFont === font ? 'selected' : '' %>><%= font %></option>
+              <% }) %>
+            </select>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Storefront typography loaded dynamically via Google Fonts (default: Outfit)</span>
+          </div>
+
+          <!-- Border Radius -->
+          <div class="form-group">
+            <label for="theme_border_radius">Border Radius *</label>
+            <select id="theme_border_radius" name="theme_border_radius" class="form-control" required>
+              <% 
+                const currentRadius = (typeof themeSettings !== 'undefined' && themeSettings.theme_border_radius) || '12px';
+                const radiusOpts = ['4px', '8px', '12px', '16px', '20px'];
+                radiusOpts.forEach(rad => { 
+              %>
+                <option value="<%= rad %>" <%= currentRadius === rad ? 'selected' : '' %>><%= rad %></option>
+              <% }) %>
+            </select>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Curvature radius of buttons, cards, and modal components (default: 12px)</span>
+          </div>
+        </div>
+
+        <button type="submit" class="btn" style="width: 100%; margin-top: 2rem; font-size: 1rem;">Save Theme Customization Settings</button>
+      </form>
+    </div>
   </div>
+</div>
 
   <!-- Edit Block Modal -->
   <div id="editBlockModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(15, 23, 42, 0.8); backdrop-filter: blur(4px);">
@@ -868,7 +962,54 @@
           });
         });
       }
+
+      // Restore active tab from localStorage if exists
+      const savedTab = localStorage.getItem('activePageBuilderTab');
+      if (savedTab === 'theme') {
+        switchTab('theme');
+      } else {
+        switchTab('layout');
+      }
     });
+
+    function switchTab(tabName) {
+      const layoutTab = document.getElementById('tab-layout-content');
+      const themeTab = document.getElementById('tab-theme-content');
+      const layoutBtn = document.getElementById('tab-layout-btn');
+      const themeBtn = document.getElementById('tab-theme-btn');
+
+      if (tabName === 'layout') {
+        if (layoutTab) layoutTab.style.display = 'block';
+        if (themeTab) themeTab.style.display = 'none';
+        
+        if (layoutBtn) {
+          layoutBtn.style.color = 'var(--text-primary)';
+          layoutBtn.style.fontWeight = '600';
+          layoutBtn.style.borderBottom = '2px solid var(--accent-primary)';
+        }
+        if (themeBtn) {
+          themeBtn.style.color = 'var(--text-secondary)';
+          themeBtn.style.fontWeight = '500';
+          themeBtn.style.borderBottom = 'none';
+        }
+        localStorage.setItem('activePageBuilderTab', 'layout');
+      } else {
+        if (layoutTab) layoutTab.style.display = 'none';
+        if (themeTab) themeTab.style.display = 'block';
+        
+        if (themeBtn) {
+          themeBtn.style.color = 'var(--text-primary)';
+          themeBtn.style.fontWeight = '600';
+          themeBtn.style.borderBottom = '2px solid var(--accent-primary)';
+        }
+        if (layoutBtn) {
+          layoutBtn.style.color = 'var(--text-secondary)';
+          layoutBtn.style.fontWeight = '500';
+          layoutBtn.style.borderBottom = 'none';
+        }
+        localStorage.setItem('activePageBuilderTab', 'theme');
+      }
+    }
   </script>
 </body>
 </html>
